@@ -1056,7 +1056,7 @@ function displayWord(){
  const w=currentWord();
  document.getElementById("word").textContent=w[0];
  document.getElementById("translation").textContent=w[1];
- document.getElementById("info").innerHTML="<b>Forklaring:</b> "+w[3]+"<br><br><b>Eksempel:</b> <i>"+w[2]+"</i>";
+ document.getElementById("info").innerHTML="<b>Oversettelse:</b> "+w[1]+"<br><br><b>Eksempel:</b> <i>"+w[2]+"</i><br><br><b>Merknad:</b> "+w[3];
  document.getElementById("counter").textContent=(queuePos+1)+" / "+filteredWords().length+" før listen blandes på nytt";
  updateSave();
 }
