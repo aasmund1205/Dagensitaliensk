@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Italiensk ord</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f4f4;margin:0;color:#222}
+.app{max-width:600px;margin:auto;padding:25px 18px}
+h1{text-align:center}
+.card{background:white;padding:28px 22px;border-radius:20px;box-shadow:0 4px 15px #0001;margin:20px 0}
+.word{text-align:center;font-size:42px;font-weight:700;margin:10px}
+.translation{text-align:center;font-size:23px;margin:15px}
+.info{background:#f4f4f4;padding:15px;border-radius:12px;line-height:1.5}
+.activityGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.activityBox{background:#f4f4f4;padding:16px;border-radius:12px;text-align:center}.activityNumber{font-size:28px;font-weight:700}.activityLabel{font-size:13px;color:#777;margin-top:4px}
+button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:13px;font-size:18px;font-weight:600}
+.next{background:#222;color:white}
+.save{background:#e5e5ea}
+.savedButton{background:#d8f5df}
+.listButton{background:white;border:1px solid #ccc}
+.savedList{display:none}
+.item{background:#f4f4f4;padding:13px;border-radius:10px;margin:8px 0}
+.remove{width:auto;padding:7px 10px;font-size:14px}
+.fact{font-size:19px;line-height:1.5}
+.counter{text-align:center;color:#777;margin-top:12px;font-size:14px}
+.settings{background:white;padding:18px;border-radius:16px;margin:15px 0}
+.settings label{display:block;font-weight:600;margin-bottom:8px}
+.settings select{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:17px;background:white}
+</style>
+</head>
+<body>
+<div class="app">
+<h1>Italiensk hver dag 🇮🇹</h1>
+
+<div class="settings">
+<label for="wordType">Hvilke ord vil du øve på?</label>
+<select id="wordType" onchange="changeType()">
+<option value="all">Alle typer ord</option>
+<option value="verb">Verb</option>
+<option value="noun">Substantiv</option>
+<option value="adjective">Adjektiv</option>
+</select>
+</div>
+
+<div id="wordCard" class="card">
+<div id="word" class="word"></div>
+<div id="translation" class="translation"></div>
+<div id="info" class="info"></div>
+<button id="saveBtn" class="save" onclick="saveWord()">☆ Lagre ord</button>
+<button class="next" onclick="next()">Neste ord →</button>
+<div id="counter" class="counter"></div>
+</div>
+
+<div id="factCard" class="card" style="display:none">
+<h2>🇮🇹 Fakta om Italia</h2>
+<div id="fact" class="fact"></div>
+<button class="next" onclick="next()">Neste ord →</button>
+</div>
+
+<button class="listButton" onclick="showSaved()">📚 Lagrede ord</button>
+<button class="listButton" onclick="showActivity()">📊 Aktivitet</button>
+
+<div id="activityPage" class="card savedList">
+<h2>Aktivitet</h2>
+<p>Her ser du hvor mange ganger du har trykket deg videre til et nytt ord.</p>
+<div class="activityGrid">
+<div class="activityBox"><div id="activityTotal" class="activityNumber">0</div><div class="activityLabel">Totalt</div></div>
+<div class="activityBox"><div id="activityToday" class="activityNumber">0</div><div class="activityLabel">I dag</div></div>
+<div class="activityBox"><div id="activitySession" class="activityNumber">0</div><div class="activityLabel">Denne økten</div></div>
+<div class="activityBox"><div id="activityDays" class="activityNumber">0</div><div class="activityLabel">Aktive dager</div></div>
+</div>
+</div>
+
+<div id="savedList" class="card savedList">
+<h2>Lagrede ord</h2>
+<div id="savedWords"></div>
+</div>
+</div>
+
+<script>
+const words=[
+["affidarsi","å stole på / overlate seg til","Mi affido a te.","Et refleksivt verb som brukes når man stoler på eller overlater seg til noen.","verb"],
+["riuscire","å klare / lykkes med","Non riesco a dormire.","Brukes ofte som riuscire a + infinitiv.","verb"],
+["scegliere","å velge","Devo scegliere un ristorante.","Et svært vanlig verb.","verb"],
+["accorgersi","å legge merke til / oppdage","Mi sono accorto dell'errore.","Refleksivt verb, ofte brukt når man plutselig oppdager noe.","verb"],
+["invece","i stedet / derimot","Io invece preferisco il caffè.","Brukes for å sette to ting opp mot hverandre.","other"],
+["ancora","fortsatt / ennå / igjen","Abito ancora qui.","Betydningen varierer med sammenhengen.","other"],
+["appena","nettopp / så snart","Sono appena arrivato.","Et vanlig adverb med flere betydninger.","other"],
+["magari","kanskje / gjerne / om bare","Magari domani!","Et svært vanlig og fleksibelt italiensk ord.","other"],
+["comunque","uansett / likevel","Comunque, andiamo.","Svært vanlig i dagligtale.","other"],
+["allora","da / altså / i så fall","Allora, che facciamo?","Et av de vanligste italienske småordene.","other"],
+["soprattutto","særlig / framfor alt","Mi piace soprattutto la montagna.","Brukes for å fremheve noe.","other"],
+["abbastanza","ganske / tilstrekkelig","È abbastanza facile.","Kan bety både ganske og nok.","other"],
+["diventare","å bli","Vuole diventare medico.","Brukes om overgang fra én tilstand til en annen.","verb"],
+["mancare","å mangle / savne","Mi manca l'Italia.","Mi manca betyr omtrent «jeg savner».","verb"],
+["voglia","lyst","Ho voglia di un caffè.","Avere voglia di betyr å ha lyst på eller til noe.","other"],
+["vicino","nær","Il bar è vicino.","Kan brukes om både avstand og personer.","other"],
+["lontano","langt borte","La stazione è lontana.","Motsatt av vicino.","other"],
+["presto","tidlig / snart","A presto!","Kan bety både tidlig og snart.","other"],
+["subito","med en gang","Arrivo subito.","Svært vanlig i dagligtale.","other"],
+["davvero","virkelig","È davvero bello.","Brukes for å forsterke et utsagn.","other"],
+["forse","kanskje","Forse domani.","Uttrykker usikkerhet.","other"],
+["spesso","ofte","Vado spesso in Italia.","Et vanlig tidsadverb.","other"],
+["quasi","nesten","Sono quasi arrivato.","Betyr at noe er nær ved å være fullført.","other"],
+["insieme","sammen","Andiamo insieme.","Et nyttig hverdagsord.","other"],
+["sembrare","å virke / se ut til","Sembra facile.","Brukes når noe virker å være på en bestemt måte.","verb"],
+["sapere","å vite / kunne","Non lo so.","Brukes om kunnskap og det å vite noe.","verb"],
+["conoscere","å kjenne","Conosco bene Roma.","Brukes om personer, steder og ting man kjenner.","verb"],
+["mettere","å legge / sette / ta på","Metto le chiavi sul tavolo.","Et svært vanlig verb med mange bruksområder.","verb"],
+["portare","å ta med / bære","Porto il vino.","Brukes når man tar eller bærer noe med seg.","verb"],
+["prendere","å ta","Prendo un caffè.","Brukes blant annet om mat, drikke og transport.","verb"],
+["lasciare","å forlate / la","Lascio la macchina qui.","Kan bety både å forlate og å la noe være.","verb"],
+["trovare","å finne","Non trovo le chiavi.","Et svært vanlig verb.","verb"],
+["pensare","å tenke / tro","Penso di sì.","Penso di sì betyr omtrent «jeg tror det».","verb"],
+["credere","å tro","Credo di sì.","Brukes om hva man tror eller mener.","verb"],
+["capire","å forstå","Non capisco.","Et viktig verb når man lærer italiensk.","verb"],
+["dimenticare","å glemme","Ho dimenticato le chiavi.","Vanlig verb, særlig nyttig i fortid.","verb"],
+["ricordare","å huske","Ricordo quel giorno.","Kan også brukes refleksivt: ricordarsi.","verb"],
+["aspettare","å vente","Ti aspetto qui.","Ti aspetto betyr «jeg venter på deg».","verb"],
+["chiedere","å spørre / be om","Posso chiedere una cosa?","Kan bety både spørre og be om.","verb"],
+["rispondere","å svare","Devo rispondere.","Brukes ofte med a: rispondere a qualcuno.","verb"],
+["succedere","å skje","Che cosa è successo?","Che cosa è successo? betyr «Hva skjedde?».","verb"]];
+
+// Ekstra substantiv og adjektiv
+words.push(
+["viaggio","reise","Il viaggio è stato bellissimo.","Et substantiv. Flertall: viaggi.","noun"],
+["spiaggia","strand","La spiaggia è bellissima.","Et hunkjønnssubstantiv: la spiaggia.","noun"],
+["montagna","fjell","Amo la montagna.","Et hunkjønnssubstantiv: la montagna.","noun"],
+["strada","vei / gate","Questa strada è lunga.","Et hunkjønnssubstantiv: la strada.","noun"],
+["paese","land / landsby","È un paese bellissimo.","Et hankjønnssubstantiv: il paese.","noun"],
+["città","by","Roma è una città grande.","Substantivet har samme form i entall og flertall.","noun"],
+["tempo","tid / vær","Non ho molto tempo.","Et vanlig hankjønnssubstantiv med flere betydninger.","noun"],
+["lavoro","arbeid / jobb","Ho molto lavoro oggi.","Et hankjønnssubstantiv: il lavoro.","noun"],
+["cibo","mat","Il cibo italiano è famoso.","Et hankjønnssubstantiv: il cibo.","noun"],
+["amico","venn","Marco è un mio amico.","Hankjønn: amico. Hunkjønn: amica.","noun"],
+["felice","glad / lykkelig","Sono molto felice.","Adjektiv som har samme entallsform for hankjønn og hunkjønn.","adjective"],
+["stanco","sliten","Sono stanco oggi.","Adjektivet bøyes: stanco, stanca, stanchi, stanche.","adjective"],
+["veloce","rask","La macchina è veloce.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["lento","langsom","Il treno è lento.","Bøyes etter kjønn og tall.","adjective"],
+["facile","lett / enkel","L'italiano non è sempre facile.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["difficile","vanskelig","Questo esercizio è difficile.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["bello","vakker / fin","È un posto bellissimo.","Et svært vanlig adjektiv med flere bøyningsformer.","adjective"],
+["grande","stor","Roma è una grande città.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["piccolo","liten","È un piccolo paese.","Bøyes etter kjønn og tall.","adjective"],
+["interessante","interessant","Il libro è interessante.","Samme entallsform for hankjønn og hunkjønn.","adjective"]
+);
+
+
+// Større ordforråd
+words.push(
+["allegro", "munter / glad", "Lui è sempre allegro.", "Et adjektiv for en person eller stemning som er glad og livlig.", "adjective"],
+["antico", "gammel / antikk", "È una città antica.", "Brukes om noe gammelt, særlig historiske steder og gjenstander.", "adjective"],
+["aperto", "åpen", "Il museo è aperto.", "Bøyes etter kjønn og tall: aperto, aperta, aperti, aperte.", "adjective"],
+["caldo", "varm", "Oggi fa molto caldo.", "Kan beskrive temperatur, vær, mat og drikke.", "adjective"],
+["caro", "dyr / kjær", "Questo ristorante è caro.", "Kan bety både «dyr» og «kjær», avhengig av sammenhengen.", "adjective"],
+["chiaro", "klar / lys", "La spiegazione è chiara.", "Brukes om blant annet farge, språk og noe som er lett å forstå.", "adjective"],
+["comodo", "komfortabel / praktisk", "Questo treno è molto comodo.", "Brukes om noe behagelig eller praktisk.", "adjective"],
+["contento", "fornøyd / glad", "Sono contento del risultato.", "Vanlig adjektiv for å uttrykke tilfredshet.", "adjective"],
+["curioso", "nysgjerrig / merkelig", "Sono curioso di sapere.", "Kan beskrive både en nysgjerrig person og noe merkelig.", "adjective"],
+["diverso", "forskjellig / annerledes", "È molto diverso.", "Et vanlig adjektiv for forskjeller.", "adjective"],
+["dolce", "søt / mild", "Questo dolce è molto dolce.", "Kan beskrive smak, personlighet eller noe mildt.", "adjective"],
+["freddo", "kald", "Il mare è freddo.", "Motsatt av caldo.", "adjective"],
+["gentile", "vennlig / høflig", "La cameriera è molto gentile.", "Samme entallsform for hankjønn og hunkjønn.", "adjective"],
+["giovane", "ung", "È un giocatore giovane.", "Samme entallsform for hankjønn og hunkjønn.", "adjective"],
+["importante", "viktig", "È una decisione importante.", "Samme entallsform for hankjønn og hunkjønn.", "adjective"],
+["libero", "fri / ledig", "Sei libero domani?", "Kan bety både fri og ledig.", "adjective"],
+["migliore", "bedre / best", "Questo vino è migliore.", "Komparativ form knyttet til buono.", "adjective"],
+["nuovo", "ny", "Ho comprato una bici nuova.", "Bøyes etter kjønn og tall.", "adjective"],
+["possibile", "mulig", "È possibile entrare?", "Samme entallsform for hankjønn og hunkjønn.", "adjective"],
+["pronto", "klar / ferdig", "Sono pronto.", "Vanlig uttrykk når man er klar.", "adjective"],
+["sicuro", "sikker / trygg", "Sei sicuro?", "Brukes både om sikkerhet og om å være sikker på noe.", "adjective"],
+["tranquillo", "rolig", "È un posto tranquillo.", "Brukes om steder, situasjoner og personer.", "adjective"],
+["utile", "nyttig", "Questo esercizio è utile.", "Samme entallsform for hankjønn og hunkjønn.", "adjective"],
+["vecchio", "gammel", "È una vecchia casa.", "Vanlig adjektiv for alder.", "adjective"],
+["vero", "sann / ekte", "È una storia vera.", "Vanlig i uttrykket È vero? = Er det sant?", "adjective"],
+["acqua", "vann", "Vorrei un'acqua naturale.", "Et hunkjønnssubstantiv, selv om entallsartikkelen blir l'acqua.", "noun"],
+["anno", "år", "Sono qui da un anno.", "Et svært vanlig hankjønnssubstantiv.", "noun"],
+["casa", "hus / hjem", "Vado a casa.", "A casa betyr «hjemme/hjem» uten artikkel i mange uttrykk.", "noun"],
+["cosa", "ting / sak", "Che cosa fai?", "Et av de vanligste substantivene i italiensk.", "noun"],
+["giorno", "dag", "Buongiorno!", "Hankjønn. Flertall: giorni.", "noun"],
+["notte", "natt", "Buonanotte!", "Hunkjønn. Flertall: notti.", "noun"],
+["mattina", "morgen / formiddag", "Partiamo domani mattina.", "Hunkjønnssubstantiv.", "noun"],
+["sera", "kveld", "Ci vediamo stasera.", "Sera betyr kveld; stasera betyr i kveld.", "noun"],
+["settimana", "uke", "Resto una settimana.", "Hunkjønn. Flertall: settimane.", "noun"],
+["mese", "måned", "Il mese prossimo vado in Italia.", "Hankjønn. Flertall: mesi.", "noun"],
+["macchina", "bil / maskin", "La macchina è fuori.", "I dagligtale betyr macchina ofte bil.", "noun"],
+["stazione", "stasjon", "Dov'è la stazione?", "Hunkjønn. Flertall: stazioni.", "noun"],
+["treno", "tog", "Prendo il treno.", "Hankjønn. Flertall: treni.", "noun"],
+["biglietto", "billett", "Vorrei un biglietto per Roma.", "Hankjønn. Flertall: biglietti.", "noun"],
+["ristorante", "restaurant", "Conosco un buon ristorante.", "Hankjønn. Flertall: ristoranti.", "noun"],
+["conto", "regning / konto", "Il conto, per favore.", "På restaurant betyr il conto regningen.", "noun"],
+["pane", "brød", "Vorrei del pane.", "Hankjønnssubstantiv.", "noun"],
+["formaggio", "ost", "Mi piace il formaggio.", "Hankjønn. Flertall: formaggi.", "noun"],
+["vino", "vin", "Un bicchiere di vino rosso.", "Hankjønn. Flertall: vini.", "noun"],
+["porta", "dør", "Chiudi la porta.", "Hunkjønn. Flertall: porte.", "noun"],
+["finestra", "vindu", "Apri la finestra.", "Hunkjønn. Flertall: finestre.", "noun"],
+["piazza", "torg / plass", "Ci vediamo in piazza.", "Hunkjønn. Et svært vanlig ord i italienske stedsnavn.", "noun"],
+["mare", "hav / sjø", "Andiamo al mare.", "Hankjønnssubstantiv.", "noun"],
+["fiume", "elv", "Il fiume attraversa la città.", "Hankjønn. Flertall: fiumi.", "noun"],
+["isola", "øy", "La Sicilia è un'isola.", "Hunkjønn. Flertall: isole.", "noun"],
+["famiglia", "familie", "La mia famiglia vive qui.", "Hunkjønn. Flertall: famiglie.", "noun"],
+["ragazzo", "gutt / ung mann", "Quel ragazzo è italiano.", "Hunkjønn: ragazza.", "noun"],
+["domanda", "spørsmål", "Ho una domanda.", "Hunkjønn. Flertall: domande.", "noun"],
+["risposta", "svar", "Non conosco la risposta.", "Hunkjønn. Flertall: risposte.", "noun"],
+["problema", "problem", "C'è un problema.", "Hankjønn til tross for endelsen -a.", "noun"],
+["aiuto", "hjelp", "Ho bisogno di aiuto.", "Hankjønnssubstantiv.", "noun"],
+["arrivare", "å ankomme / komme", "Arrivo alle otto.", "Regelmessig -are-verb.", "verb"],
+["partire", "å dra / reise", "Partiamo domani.", "Regelmessig -ire-verb.", "verb"],
+["entrare", "å gå inn", "Posso entrare?", "Regelmessig -are-verb.", "verb"],
+["uscire", "å gå ut", "Esco stasera.", "Uregelmessig og svært vanlig verb.", "verb"],
+["vedere", "å se", "Vedo la montagna.", "Vanlig -ere-verb.", "verb"],
+["guardare", "å se på", "Guardo la partita.", "Brukes om å se aktivt på noe.", "verb"],
+["parlare", "å snakke", "Parlo un po' d'italiano.", "Regelmessig -are-verb.", "verb"],
+["dire", "å si", "Che cosa vuoi dire?", "Et svært vanlig uregelmessig verb.", "verb"],
+["fare", "å gjøre / lage", "Che cosa fai?", "Et av de mest brukte italienske verbene.", "verb"],
+["andare", "å gå / dra", "Vado a Roma.", "Et svært vanlig uregelmessig verb.", "verb"],
+["venire", "å komme", "Vieni a casa mia?", "Uregelmessig verb.", "verb"],
+["mangiare", "å spise", "Mangiamo alle otto.", "Regelmessig -are-verb.", "verb"],
+["bere", "å drikke", "Bevo un caffè.", "Uregelmessig verb.", "verb"],
+["comprare", "å kjøpe", "Compro il pane.", "Regelmessig -are-verb.", "verb"],
+["pagare", "å betale", "Pago con la carta.", "Regelmessig -are-verb med stavemåteendring i enkelte former.", "verb"],
+["cercare", "å lete etter / søke", "Cerco un albergo.", "Regelmessig -are-verb med stavemåteendring i enkelte former.", "verb"],
+["usare", "å bruke", "Uso il telefono.", "Regelmessig -are-verb.", "verb"],
+["aprire", "å åpne", "Apro la porta.", "Vanlig -ire-verb.", "verb"],
+["chiudere", "å lukke", "Chiudo la finestra.", "Vanlig -ere-verb.", "verb"],
+["leggere", "å lese", "Leggo un libro.", "Uregelmessig i enkelte former, blant annet leggo.", "verb"],
+["scrivere", "å skrive", "Scrivo un messaggio.", "Vanlig -ere-verb.", "verb"],
+["dormire", "å sove", "Dormo bene.", "Regelmessig -ire-verb.", "verb"],
+["sentire", "å høre / føle", "Sento un rumore.", "Kan bety både høre og føle.", "verb"],
+["vivere", "å leve / bo", "Vivo in Norvegia.", "Kan brukes om både å leve og å bo.", "verb"],
+["lavorare", "å arbeide", "Lavoro oggi.", "Regelmessig -are-verb.", "verb"],
+["studiare", "å studere", "Studio italiano.", "Regelmessig -are-verb.", "verb"]
+);
+
+
+// Utvidet ordforråd
+words.push(
+["abito", "klær / antrekk", "Oggi impariamo la parola «abito».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["aeroporto", "flyplass", "Oggi impariamo la parola «aeroporto».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["albergo", "hotell", "Oggi impariamo la parola «albergo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["albero", "tre", "Oggi impariamo la parola «albero».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["amore", "kjærlighet", "Oggi impariamo la parola «amore».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["animale", "dyr", "Oggi impariamo la parola «animale».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["appartamento", "leilighet", "Oggi impariamo la parola «appartamento».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["aria", "luft", "Oggi impariamo la parola «aria».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["arte", "kunst", "Oggi impariamo la parola «arte».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["autobus", "buss", "Oggi impariamo la parola «autobus».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["bambino", "barn / gutt", "Oggi impariamo la parola «bambino».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["banca", "bank", "Oggi impariamo la parola «banca».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["barca", "båt", "Oggi impariamo la parola «barca».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["bicchiere", "glass", "Oggi impariamo la parola «bicchiere».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["bicicletta", "sykkel", "Oggi impariamo la parola «bicicletta».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["borsa", "veske", "Oggi impariamo la parola «borsa».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["bosco", "skog", "Oggi impariamo la parola «bosco».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["braccio", "arm", "Oggi impariamo la parola «braccio».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["caffè", "kaffe", "Oggi impariamo la parola «caffè».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["camera", "rom", "Oggi impariamo la parola «camera».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["campagna", "landsbygd", "Oggi impariamo la parola «campagna».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["campo", "mark / felt", "Oggi impariamo la parola «campo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["cane", "hund", "Oggi impariamo la parola «cane».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["carne", "kjøtt", "Oggi impariamo la parola «carne».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["carta", "papir / kort", "Oggi impariamo la parola «carta».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["centro", "sentrum", "Oggi impariamo la parola «centro».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["chiave", "nøkkel", "Oggi impariamo la parola «chiave».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["chiesa", "kirke", "Oggi impariamo la parola «chiesa».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["cinema", "kino", "Oggi impariamo la parola «cinema».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["colazione", "frokost", "Oggi impariamo la parola «colazione».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["colore", "farge", "Oggi impariamo la parola «colore».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["cuore", "hjerte", "Oggi impariamo la parola «cuore».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["denaro", "penger", "Oggi impariamo la parola «denaro».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["dente", "tann", "Oggi impariamo la parola «dente».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["destra", "høyre", "Oggi impariamo la parola «destra».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["dottore", "lege", "Oggi impariamo la parola «dottore».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["estate", "sommer", "Oggi impariamo la parola «estate».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["famiglia", "familie", "Oggi impariamo la parola «famiglia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["farmacia", "apotek", "Oggi impariamo la parola «farmacia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["festa", "fest", "Oggi impariamo la parola «festa».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["figlio", "sønn / barn", "Oggi impariamo la parola «figlio».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["fiore", "blomst", "Oggi impariamo la parola «fiore».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["foto", "foto", "Oggi impariamo la parola «foto».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["fratello", "bror", "Oggi impariamo la parola «fratello».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["frutta", "frukt", "Oggi impariamo la parola «frutta».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["gamba", "bein", "Oggi impariamo la parola «gamba».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["gatto", "katt", "Oggi impariamo la parola «gatto».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["gente", "folk", "Oggi impariamo la parola «gente».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["giardino", "hage", "Oggi impariamo la parola «giardino».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["gioco", "spill / lek", "Oggi impariamo la parola «gioco».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["giornale", "avis", "Oggi impariamo la parola «giornale».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["gruppo", "gruppe", "Oggi impariamo la parola «gruppo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["idea", "idé", "Oggi impariamo la parola «idea».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["inverno", "vinter", "Oggi impariamo la parola «inverno».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["lago", "innsjø", "Oggi impariamo la parola «lago».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["latte", "melk", "Oggi impariamo la parola «latte».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["letto", "seng", "Oggi impariamo la parola «letto».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["libro", "bok", "Oggi impariamo la parola «libro».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["lingua", "språk / tunge", "Oggi impariamo la parola «lingua».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["luce", "lys", "Oggi impariamo la parola «luce».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["mano", "hånd", "Oggi impariamo la parola «mano».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["mappa", "kart", "Oggi impariamo la parola «mappa».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["mercato", "marked", "Oggi impariamo la parola «mercato».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["minuto", "minutt", "Oggi impariamo la parola «minuto».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["mondo", "verden", "Oggi impariamo la parola «mondo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["museo", "museum", "Oggi impariamo la parola «museo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["musica", "musikk", "Oggi impariamo la parola «musica».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["nome", "navn", "Oggi impariamo la parola «nome».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["numero", "nummer / tall", "Oggi impariamo la parola «numero».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["occhio", "øye", "Oggi impariamo la parola «occhio».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["ora", "time / klokkeslett", "Oggi impariamo la parola «ora».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["ospedale", "sykehus", "Oggi impariamo la parola «ospedale».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["padre", "far", "Oggi impariamo la parola «padre».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["parola", "ord", "Oggi impariamo la parola «parola».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["partita", "kamp", "Oggi impariamo la parola «partita».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["pesce", "fisk", "Oggi impariamo la parola «pesce».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["piede", "fot", "Oggi impariamo la parola «piede».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["piatto", "tallerken / rett", "Oggi impariamo la parola «piatto».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["ponte", "bro", "Oggi impariamo la parola «ponte».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["prezzo", "pris", "Oggi impariamo la parola «prezzo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["primavera", "vår", "Oggi impariamo la parola «primavera».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["ristorante", "restaurant", "Oggi impariamo la parola «ristorante».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["sale", "salt", "Oggi impariamo la parola «sale».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["scuola", "skole", "Oggi impariamo la parola «scuola».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["sedia", "stol", "Oggi impariamo la parola «sedia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["sinistra", "venstre", "Oggi impariamo la parola «sinistra».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["sorella", "søster", "Oggi impariamo la parola «sorella».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["sport", "sport", "Oggi impariamo la parola «sport».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["storia", "historie", "Oggi impariamo la parola «storia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["studente", "student", "Oggi impariamo la parola «studente».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["tavolo", "bord", "Oggi impariamo la parola «tavolo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["telefono", "telefon", "Oggi impariamo la parola «telefono».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["testa", "hode", "Oggi impariamo la parola «testa».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["ufficio", "kontor", "Oggi impariamo la parola «ufficio».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["uomo", "mann", "Oggi impariamo la parola «uomo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["vacanza", "ferie", "Oggi impariamo la parola «vacanza».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["valigia", "koffert", "Oggi impariamo la parola «valigia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["verdura", "grønnsaker", "Oggi impariamo la parola «verdura».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["vestito", "kjole / plagg", "Oggi impariamo la parola «vestito».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["voce", "stemme", "Oggi impariamo la parola «voce».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["zona", "område", "Oggi impariamo la parola «zona».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["amicizia", "vennskap", "Oggi impariamo la parola «amicizia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["angolo", "hjørne", "Oggi impariamo la parola «angolo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["bagno", "bad / toalett", "Oggi impariamo la parola «bagno».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["balcone", "balkong", "Oggi impariamo la parola «balcone».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["bottiglia", "flaske", "Oggi impariamo la parola «bottiglia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["canzone", "sang", "Oggi impariamo la parola «canzone».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["capello", "hårstrå", "Oggi impariamo la parola «capello».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["cappello", "hatt", "Oggi impariamo la parola «cappello».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["carota", "gulrot", "Oggi impariamo la parola «carota».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["cena", "middag", "Oggi impariamo la parola «cena».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["cucina", "kjøkken / matlaging", "Oggi impariamo la parola «cucina».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["dito", "finger", "Oggi impariamo la parola «dito».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["doccia", "dusj", "Oggi impariamo la parola «doccia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["errore", "feil", "Oggi impariamo la parola «errore».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["forchetta", "gaffel", "Oggi impariamo la parola «forchetta».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["frigorifero", "kjøleskap", "Oggi impariamo la parola «frigorifero».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["gonna", "skjørt", "Oggi impariamo la parola «gonna».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["indirizzo", "adresse", "Oggi impariamo la parola «indirizzo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["ingresso", "inngang", "Oggi impariamo la parola «ingresso».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["maglia", "genser / trøye", "Oggi impariamo la parola «maglia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["muro", "vegg", "Oggi impariamo la parola «muro».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["negozio", "butikk", "Oggi impariamo la parola «negozio».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["ombrello", "paraply", "Oggi impariamo la parola «ombrello».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["orologio", "klokke", "Oggi impariamo la parola «orologio».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["pantaloni", "bukser", "Oggi impariamo la parola «pantaloni».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["parco", "park", "Oggi impariamo la parola «parco».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["penna", "penn", "Oggi impariamo la parola «penna».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["pioggia", "regn", "Oggi impariamo la parola «pioggia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["piscina", "svømmebasseng", "Oggi impariamo la parola «piscina».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["polizia", "politi", "Oggi impariamo la parola «polizia».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["pranzo", "lunsj", "Oggi impariamo la parola «pranzo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["regalo", "gave", "Oggi impariamo la parola «regalo».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["scarpa", "sko", "Oggi impariamo la parola «scarpa».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["sole", "sol", "Oggi impariamo la parola «sole».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["tazza", "kopp", "Oggi impariamo la parola «tazza».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["tetto", "tak", "Oggi impariamo la parola «tetto».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["vento", "vind", "Oggi impariamo la parola «vento».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["zaino", "ryggsekk", "Oggi impariamo la parola «zaino».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["zucchero", "sukker", "Oggi impariamo la parola «zucchero».", "Et vanlig italiensk substantiv. Øv på ordet i en hel setning.", "noun"],
+["alto", "høy", "È molto alto.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["basso", "lav", "È molto basso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["buono", "god", "È molto buono.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["cattivo", "dårlig / slem", "È molto cattivo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["forte", "sterk", "È molto forte.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["debole", "svak", "È molto debole.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["lungo", "lang", "È molto lungo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["corto", "kort", "È molto corto.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["largo", "bred", "È molto largo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["stretto", "smal / trang", "È molto stretto.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["pesante", "tung", "È molto pesante.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["leggero", "lett", "È molto leggero.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["pulito", "ren", "È molto pulito.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["sporco", "skitten", "È molto sporco.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["pieno", "full", "È molto pieno.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["vuoto", "tom", "È molto vuoto.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["ricco", "rik", "È molto ricco.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["povero", "fattig", "È molto povero.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["gentile", "vennlig", "È molto gentile.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["simpatico", "hyggelig / sympatisk", "È molto simpatico.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["antipatico", "usympatisk", "È molto antipatico.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["intelligente", "intelligent", "È molto intelligente.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["stupido", "dum", "È molto stupido.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["serio", "alvorlig", "È molto serio.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["divertente", "morsom", "È molto divertente.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["noioso", "kjedelig", "È molto noioso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["famoso", "berømt", "È molto famoso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["strano", "merkelig", "È molto strano.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["normale", "normal", "È molto normale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["speciale", "spesiell", "È molto speciale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["necessario", "nødvendig", "È molto necessario.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["inutile", "unyttig", "È molto inutile.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["corretto", "riktig", "È molto corretto.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["sbagliato", "feil", "È molto sbagliato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["uguale", "lik", "È molto uguale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["differente", "forskjellig", "È molto differente.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["semplice", "enkel", "È molto semplice.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["complicato", "komplisert", "È molto complicato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["felice", "glad", "È molto felice.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["triste", "trist", "È molto triste.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["arrabbiato", "sint", "È molto arrabbiato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["preoccupato", "bekymret", "È molto preoccupato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["sorpreso", "overrasket", "È molto sorpreso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["affamato", "sulten", "È molto affamato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["assetato", "tørst", "È molto assetato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["malato", "syk", "È molto malato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["sano", "frisk / sunn", "È molto sano.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["occupato", "opptatt", "È molto occupato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["disponibile", "tilgjengelig", "È molto disponibile.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["chiuso", "stengt", "È molto chiuso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["luminoso", "lys", "È molto luminoso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["scuro", "mørk", "È molto scuro.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["rosso", "rød", "È molto rosso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["verde", "grønn", "È molto verde.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["giallo", "gul", "È molto giallo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["bianco", "hvit", "È molto bianco.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["nero", "svart", "È molto nero.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["blu", "blå", "È molto blu.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["grigio", "grå", "È molto grigio.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["marrone", "brun", "È molto marrone.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["italiano", "italiensk", "È molto italiano.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["straniero", "utenlandsk", "È molto straniero.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["locale", "lokal", "È molto locale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["nazionale", "nasjonal", "È molto nazionale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["internazionale", "internasjonal", "È molto internazionale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["pubblico", "offentlig", "È molto pubblico.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["privato", "privat", "È molto privato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["personale", "personlig", "È molto personale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["generale", "generell", "È molto generale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["principale", "hoved- / viktigste", "È molto principale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["ultimo", "siste", "È molto ultimo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["primo", "første", "È molto primo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["prossimo", "neste", "È molto prossimo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["precedente", "forrige", "È molto precedente.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["recente", "nylig / nyere", "È molto recente.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["moderno", "moderne", "È molto moderno.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["tradizionale", "tradisjonell", "È molto tradizionale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["naturale", "naturlig", "È molto naturale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["artificiale", "kunstig", "È molto artificiale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["reale", "virkelig", "È molto reale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["falso", "falsk", "È molto falso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["intero", "hel", "È molto intero.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["mezzo", "halv", "È molto mezzo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["solo", "alene / eneste", "È molto solo.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["comune", "vanlig / felles", "È molto comune.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["raro", "sjelden", "È molto raro.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["frequente", "hyppig", "È molto frequente.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["quotidiano", "daglig", "È molto quotidiano.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["settimanale", "ukentlig", "È molto settimanale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["annuale", "årlig", "È molto annuale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["economico", "billig / økonomisk", "È molto economico.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["costoso", "dyr", "È molto costoso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["gratuito", "gratis", "È molto gratuito.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["professionale", "profesjonell", "È molto professionale.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["popolare", "populær", "È molto popolare.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["fresco", "fersk / kjølig", "È molto fresco.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["secco", "tørr", "È molto secco.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["bagnato", "våt", "È molto bagnato.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["morbido", "myk", "È molto morbido.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["duro", "hard", "È molto duro.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["doloroso", "smertefull", "È molto doloroso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["rumoroso", "bråkete", "È molto rumoroso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["silenzioso", "stille", "È molto silenzioso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["pericoloso", "farlig", "È molto pericoloso.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["sicuro", "trygg / sikker", "È molto sicuro.", "Et vanlig italiensk adjektiv. Legg merke til bøyningen i sammenheng.", "adjective"],
+["abitare", "å bo", "Voglio abitare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["aiutare", "å hjelpe", "Voglio aiutare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["amare", "å elske", "Voglio amare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["ascoltare", "å lytte", "Voglio ascoltare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["ballare", "å danse", "Voglio ballare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["bastare", "å være nok", "Voglio bastare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["cambiare", "å endre / bytte", "Voglio cambiare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["camminare", "å gå", "Voglio camminare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["cantare", "å synge", "Voglio cantare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["chiamare", "å kalle / ringe", "Voglio chiamare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["cominciare", "å begynne", "Voglio cominciare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["continuare", "å fortsette", "Voglio continuare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["costare", "å koste", "Voglio costare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["cucinare", "å lage mat", "Voglio cucinare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["desiderare", "å ønske", "Voglio desiderare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["entrare", "å gå inn", "Voglio entrare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["giocare", "å spille / leke", "Voglio giocare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["guidare", "å kjøre", "Voglio guidare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["imparare", "å lære", "Voglio imparare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["incontrare", "å møte", "Voglio incontrare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["lavare", "å vaske", "Voglio lavare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["mandare", "å sende", "Voglio mandare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["nuotare", "å svømme", "Voglio nuotare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["ordinare", "å bestille", "Voglio ordinare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["parlare", "å snakke", "Voglio parlare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["passare", "å passere / tilbringe", "Voglio passare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["portare", "å ta med / bære", "Voglio portare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["preparare", "å forberede", "Voglio preparare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["provare", "å prøve", "Voglio provare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["restare", "å bli / forbli", "Voglio restare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["salutare", "å hilse", "Voglio salutare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["telefonare", "å ringe", "Voglio telefonare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["tornare", "å komme tilbake", "Voglio tornare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["viaggiare", "å reise", "Voglio viaggiare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["visitare", "å besøke", "Voglio visitare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["accendere", "å slå på / tenne", "Voglio accendere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["apprendere", "å lære", "Voglio apprendere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["cadere", "å falle", "Voglio cadere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["chiedere", "å spørre / be om", "Voglio chiedere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["chiudere", "å lukke", "Voglio chiudere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["conoscere", "å kjenne", "Voglio conoscere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["correre", "å løpe", "Voglio correre.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["credere", "å tro", "Voglio credere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["decidere", "å bestemme", "Voglio decidere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["leggere", "å lese", "Voglio leggere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["mettere", "å legge / sette", "Voglio mettere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["perdere", "å miste / tape", "Voglio perdere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["piangere", "å gråte", "Voglio piangere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["prendere", "å ta", "Voglio prendere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["ricevere", "å motta", "Voglio ricevere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["ridere", "å le", "Voglio ridere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["rompere", "å ødelegge / knuse", "Voglio rompere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["scendere", "å gå ned / stige av", "Voglio scendere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["scrivere", "å skrive", "Voglio scrivere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["spendere", "å bruke penger", "Voglio spendere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["vedere", "å se", "Voglio vedere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["vendere", "å selge", "Voglio vendere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["vivere", "å leve / bo", "Voglio vivere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["aprire", "å åpne", "Voglio aprire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["coprire", "å dekke", "Voglio coprire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["dormire", "å sove", "Voglio dormire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["finire", "å avslutte", "Voglio finire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["offrire", "å tilby", "Voglio offrire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["partire", "å dra", "Voglio partire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["preferire", "å foretrekke", "Voglio preferire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["seguire", "å følge", "Voglio seguire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["sentire", "å høre / føle", "Voglio sentire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["servire", "å tjene / være nødvendig", "Voglio servire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["soffrire", "å lide", "Voglio soffrire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["capire", "å forstå", "Voglio capire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["pulire", "å rengjøre", "Voglio pulire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["salire", "å gå opp / stige på", "Voglio salire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["venire", "å komme", "Voglio venire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["dire", "å si", "Voglio dire.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["fare", "å gjøre / lage", "Voglio fare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["andare", "å gå / dra", "Voglio andare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["dare", "å gi", "Voglio dare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["stare", "å være / oppholde seg", "Voglio stare.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["avere", "å ha", "Voglio avere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["essere", "å være", "Voglio essere.", "Et vanlig italiensk verb. Øv på verbet i presens og fortid.", "verb"],
+["accidente", "uhell / ulykke", "La parola di oggi è «accidente».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["accordo", "avtale", "La parola di oggi è «accordo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["adulto", "voksen", "La parola di oggi è «adulto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["affare", "sak / forretning", "La parola di oggi è «affare».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["agenzia", "byrå", "La parola di oggi è «agenzia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["agosto", "august", "La parola di oggi è «agosto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["alba", "daggry", "La parola di oggi è «alba».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["album", "album", "La parola di oggi è «album».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["allegria", "glede / munterhet", "La parola di oggi è «allegria».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ambiente", "miljø", "La parola di oggi è «ambiente».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ambulanza", "ambulanse", "La parola di oggi è «ambulanza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["anno", "år", "La parola di oggi è «anno».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["appartenenza", "tilhørighet", "La parola di oggi è «appartenenza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["aprile", "april", "La parola di oggi è «aprile».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["argomento", "tema", "La parola di oggi è «argomento».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["arma", "våpen", "La parola di oggi è «arma».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ascensore", "heis", "La parola di oggi è «ascensore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["aspetto", "utseende / aspekt", "La parola di oggi è «aspetto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["attenzione", "oppmerksomhet", "La parola di oggi è «attenzione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["attore", "skuespiller", "La parola di oggi è «attore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["autunno", "høst", "La parola di oggi è «autunno».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["avventura", "eventyr", "La parola di oggi è «avventura».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["bacio", "kyss", "La parola di oggi è «bacio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["base", "grunnlag / base", "La parola di oggi è «base».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["battaglia", "kamp", "La parola di oggi è «battaglia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["bellezza", "skjønnhet", "La parola di oggi è «bellezza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["biblioteca", "bibliotek", "La parola di oggi è «biblioteca».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["bisogno", "behov", "La parola di oggi è «bisogno».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["bocca", "munn", "La parola di oggi è «bocca».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["burro", "smør", "La parola di oggi è «burro».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["calcio", "fotball", "La parola di oggi è «calcio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["calore", "varme", "La parola di oggi è «calore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["cambiamento", "endring", "La parola di oggi è «cambiamento».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["camicia", "skjorte", "La parola di oggi è «camicia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["campione", "mester", "La parola di oggi è «campione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["capitale", "hovedstad / kapital", "La parola di oggi è «capitale».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["carattere", "karakter / personlighet", "La parola di oggi è «carattere».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["carnevale", "karneval", "La parola di oggi è «carnevale».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["caso", "tilfelle / sak", "La parola di oggi è «caso».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["causa", "årsak", "La parola di oggi è «causa».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["cavallo", "hest", "La parola di oggi è «cavallo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["cervello", "hjerne", "La parola di oggi è «cervello».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["cielo", "himmel", "La parola di oggi è «cielo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["cliente", "kunde", "La parola di oggi è «cliente».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["clima", "klima", "La parola di oggi è «clima».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["codice", "kode", "La parola di oggi è «codice».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["collega", "kollega", "La parola di oggi è «collega».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["collina", "ås", "La parola di oggi è «collina».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["colpa", "skyld", "La parola di oggi è «colpa».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["commercio", "handel", "La parola di oggi è «commercio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["compagnia", "selskap / følge", "La parola di oggi è «compagnia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["computer", "datamaskin", "La parola di oggi è «computer».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["concerto", "konsert", "La parola di oggi è «concerto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["condizione", "tilstand / betingelse", "La parola di oggi è «condizione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["consiglio", "råd", "La parola di oggi è «consiglio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["contatto", "kontakt", "La parola di oggi è «contatto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["controllo", "kontroll", "La parola di oggi è «controllo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["corpo", "kropp", "La parola di oggi è «corpo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["corso", "kurs / forløp", "La parola di oggi è «corso».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["costa", "kyst", "La parola di oggi è «costa».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["cultura", "kultur", "La parola di oggi è «cultura».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["decisione", "beslutning", "La parola di oggi è «decisione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["dicembre", "desember", "La parola di oggi è «dicembre».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["differenza", "forskjell", "La parola di oggi è «differenza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["difficoltà", "vanskelighet", "La parola di oggi è «difficoltà».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["discorso", "tale / samtale", "La parola di oggi è «discorso».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["distanza", "avstand", "La parola di oggi è «distanza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["domenica", "søndag", "La parola di oggi è «domenica».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["dubbio", "tvil", "La parola di oggi è «dubbio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["educazione", "utdanning / oppdragelse", "La parola di oggi è «educazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["effetto", "effekt / virkning", "La parola di oggi è «effetto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["energia", "energi", "La parola di oggi è «energia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["esempio", "eksempel", "La parola di oggi è «esempio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["esperienza", "erfaring", "La parola di oggi è «esperienza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["febbraio", "februar", "La parola di oggi è «febbraio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["fiducia", "tillit", "La parola di oggi è «fiducia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["film", "film", "La parola di oggi è «film».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["fine", "slutt / formål", "La parola di oggi è «fine».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["fine settimana", "helg", "La parola di oggi è «finesettimana».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["forma", "form", "La parola di oggi è «forma».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["fortuna", "flaks", "La parola di oggi è «fortuna».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["futuro", "framtid", "La parola di oggi è «futuro».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["gennaio", "januar", "La parola di oggi è «gennaio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["generazione", "generasjon", "La parola di oggi è «generazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ghiaccio", "is", "La parola di oggi è «ghiaccio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["giugno", "juni", "La parola di oggi è «giugno».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["governo", "regjering", "La parola di oggi è «governo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["guerra", "krig", "La parola di oggi è «guerra».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["guida", "guide / veiledning", "La parola di oggi è «guida».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ieri", "i går", "La parola di oggi è «ieri».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["immagine", "bilde", "La parola di oggi è «immagine».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["informazione", "informasjon", "La parola di oggi è «informazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["insegnante", "lærer", "La parola di oggi è «insegnante».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["interesse", "interesse", "La parola di oggi è «interesse».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["internet", "internett", "La parola di oggi è «internet».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["luglio", "juli", "La parola di oggi è «luglio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["lunedì", "mandag", "La parola di oggi è «lunedì».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["madre", "mor", "La parola di oggi è «madre».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["maggio", "mai", "La parola di oggi è «maggio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["maniera", "måte", "La parola di oggi è «maniera».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["marzo", "mars", "La parola di oggi è «marzo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["matrimonio", "ekteskap", "La parola di oggi è «matrimonio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["medicina", "medisin", "La parola di oggi è «medicina».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["memoria", "hukommelse", "La parola di oggi è «memoria».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["mercoledì", "onsdag", "La parola di oggi è «mercoledì».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["mestiere", "yrke", "La parola di oggi è «mestiere».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["momento", "øyeblikk / stund", "La parola di oggi è «momento».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["montagna", "fjell", "La parola di oggi è «montagna».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["morte", "død", "La parola di oggi è «morte».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["motivo", "grunn / motiv", "La parola di oggi è «motivo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["natura", "natur", "La parola di oggi è «natura».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["neve", "snø", "La parola di oggi è «neve».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["novembre", "november", "La parola di oggi è «novembre».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ottobre", "oktober", "La parola di oggi è «ottobre».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["occasione", "anledning / mulighet", "La parola di oggi è «occasione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["odore", "lukt", "La parola di oggi è «odore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["opera", "verk / opera", "La parola di oggi è «opera».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["opinione", "mening", "La parola di oggi è «opinione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ordine", "orden / bestilling", "La parola di oggi è «ordine».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["orecchio", "øre", "La parola di oggi è «orecchio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["origine", "opprinnelse", "La parola di oggi è «origine».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["paese", "land / landsby", "La parola di oggi è «paese».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["paura", "frykt", "La parola di oggi è «paura».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["pensiero", "tanke", "La parola di oggi è «pensiero».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["persona", "person", "La parola di oggi è «persona».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["piano", "plan / etasje", "La parola di oggi è «piano».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["polvere", "støv", "La parola di oggi è «polvere».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["pomeriggio", "ettermiddag", "La parola di oggi è «pomeriggio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["popolazione", "befolkning", "La parola di oggi è «popolazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["possibilità", "mulighet", "La parola di oggi è «possibilità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["posto", "sted / plass", "La parola di oggi è «posto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["potere", "makt", "La parola di oggi è «potere».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["presidente", "president / leder", "La parola di oggi è «presidente».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["professore", "lærer / professor", "La parola di oggi è «professore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["programma", "program", "La parola di oggi è «programma».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["progetto", "prosjekt", "La parola di oggi è «progetto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["qualità", "kvalitet", "La parola di oggi è «qualità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["quartiere", "bydel", "La parola di oggi è «quartiere».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["questione", "spørsmål / sak", "La parola di oggi è «questione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["radio", "radio", "La parola di oggi è «radio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ragione", "grunn / fornuft", "La parola di oggi è «ragione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["rapporto", "forhold / rapport", "La parola di oggi è «rapporto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["realtà", "virkelighet", "La parola di oggi è «realtà».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["regione", "region", "La parola di oggi è «regione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["risultato", "resultat", "La parola di oggi è «risultato».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["sabato", "lørdag", "La parola di oggi è «sabato».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["sangue", "blod", "La parola di oggi è «sangue».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["settembre", "september", "La parola di oggi è «settembre».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["servizio", "tjeneste / service", "La parola di oggi è «servizio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["situazione", "situasjon", "La parola di oggi è «situazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["società", "samfunn / selskap", "La parola di oggi è «società».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["sogno", "drøm", "La parola di oggi è «sogno».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["spazio", "rom / plass", "La parola di oggi è «spazio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["spettacolo", "forestilling / show", "La parola di oggi è «spettacolo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["squadra", "lag", "La parola di oggi è «squadra».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["stato", "stat / tilstand", "La parola di oggi è «stato».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["stagione", "årstid / sesong", "La parola di oggi è «stagione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["stanza", "rom", "La parola di oggi è «stanza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["stella", "stjerne", "La parola di oggi è «stella».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["strada", "vei / gate", "La parola di oggi è «strada».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["successo", "suksess", "La parola di oggi è «successo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["teatro", "teater", "La parola di oggi è «teatro».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["terra", "jord", "La parola di oggi è «terra».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["traffico", "trafikk", "La parola di oggi è «traffico».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["università", "universitet", "La parola di oggi è «università».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["valore", "verdi", "La parola di oggi è «valore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["velocità", "hastighet", "La parola di oggi è «velocità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["verità", "sannhet", "La parola di oggi è «verità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["venerdì", "fredag", "La parola di oggi è «venerdì».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["vita", "liv", "La parola di oggi è «vita».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["abile", "dyktig", "È abile.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["assoluto", "absolutt", "È assoluto.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["attento", "oppmerksom / forsiktig", "È attento.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["attuale", "nåværende", "È attuale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["azzurro", "lyseblå", "È azzurro.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["breve", "kort", "È breve.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["calmo", "rolig", "È calmo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["centrale", "sentral", "È centrale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["civile", "sivil / høflig", "È civile.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["classico", "klassisk", "È classico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["completo", "fullstendig", "È completo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["concreto", "konkret", "È concreto.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["contrario", "motsatt", "È contrario.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["culturale", "kulturell", "È culturale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["curioso", "nysgjerrig / merkelig", "È curioso.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["diretto", "direkte", "È diretto.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["dolce", "søt / mild", "È dolce.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["enorme", "enorm", "È enorme.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["europeo", "europeisk", "È europeo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["evidente", "tydelig / åpenbar", "È evidente.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["fantastico", "fantastisk", "È fantastico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["fisico", "fysisk", "È fisico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["fondamentale", "grunnleggende / avgjørende", "È fondamentale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["futuro", "framtid", "È futuro.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["globale", "global", "È globale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["grave", "alvorlig", "È grave.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["ideale", "ideell", "È ideale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["indipendente", "uavhengig", "È indipendente.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["individuale", "individuell", "È individuale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["industriale", "industriell", "È industriale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["inferiore", "lavere / underordnet", "È inferiore.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["interno", "indre / intern", "È interno.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["libero", "fri / ledig", "È libero.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["magnifico", "praktfull / fantastisk", "È magnifico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["medio", "middels / gjennomsnittlig", "È medio.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["mentale", "mental", "È mentale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["minimo", "minimal / minste", "È minimo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["musicale", "musikalsk", "È musicale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["negativo", "negativ", "È negativo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["nervoso", "nervøs", "È nervoso.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["occidentale", "vestlig", "È occidentale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["particolare", "spesiell / særskilt", "È particolare.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["perfetto", "perfekt", "È perfetto.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["politico", "politisk", "È politico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["positivo", "positiv", "È positivo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["preciso", "presis / nøyaktig", "È preciso.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["presente", "til stede / nåværende", "È presente.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["profondo", "dyp", "È profondo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["rapido", "rask", "È rapido.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["religioso", "religiøs", "È religioso.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["responsabile", "ansvarlig", "È responsabile.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["romano", "romersk", "È romano.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["sociale", "sosial", "È sociale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["storico", "historisk", "È storico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["superiore", "høyere / overordnet", "È superiore.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["tecnico", "teknisk", "È tecnico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["tipico", "typisk", "È tipico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["totale", "total", "È totale.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["turistico", "turistrelatert", "È turistico.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["urbano", "urban / bymessig", "È urbano.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["urgente", "presserende", "È urgente.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["vivo", "levende / livlig", "È vivo.", "Et italiensk adjektiv. Legg merke til hvordan adjektivet bøyes etter kjønn og tall.", "adjective"],
+["accettare", "å akseptere", "Voglio accettare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["accompagnare", "å følge / ledsage", "Voglio accompagnare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["aggiungere", "å legge til", "Voglio aggiungere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["alzare", "å løfte / heve", "Voglio alzare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["annunciare", "å kunngjøre", "Voglio annunciare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["apparire", "å dukke opp / virke", "Voglio apparire.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["appartenere", "å tilhøre", "Voglio appartenere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["aspettare", "å vente", "Voglio aspettare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["aumentare", "å øke", "Voglio aumentare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["bere", "å drikke", "Voglio bere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["bloccare", "å blokkere / stoppe", "Voglio bloccare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["bruciare", "å brenne", "Voglio bruciare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["cancellare", "å slette / avlyse", "Voglio cancellare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["causare", "å forårsake", "Voglio causare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["cenare", "å spise middag", "Voglio cenare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["cercare", "å lete etter / prøve", "Voglio cercare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["cessare", "å opphøre", "Voglio cessare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["comandare", "å kommandere / styre", "Voglio comandare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["comunicare", "å kommunisere", "Voglio comunicare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["comprare", "å kjøpe", "Voglio comprare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["comprendere", "å forstå / omfatte", "Voglio comprendere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["confermare", "å bekrefte", "Voglio confermare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["consegnare", "å levere", "Voglio consegnare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["considerare", "å vurdere / betrakte", "Voglio considerare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["contenere", "å inneholde", "Voglio contenere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["creare", "å skape", "Voglio creare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["crescere", "å vokse", "Voglio crescere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["dimenticare", "å glemme", "Voglio dimenticare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["discutere", "å diskutere", "Voglio discutere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["diventare", "å bli", "Voglio diventare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["dovere", "å måtte / skulle", "Voglio dovere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["evitare", "å unngå", "Voglio evitare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["esistere", "å eksistere", "Voglio esistere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["fermare", "å stoppe", "Voglio fermare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["firmare", "å signere", "Voglio firmare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["formare", "å danne / forme", "Voglio formare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["funzionare", "å fungere", "Voglio funzionare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["girare", "å snu / dreie / gå rundt", "Voglio girare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["guardare", "å se på", "Voglio guardare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["immaginare", "å forestille seg", "Voglio immaginare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["iniziare", "å begynne", "Voglio iniziare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["insegnare", "å undervise / lære bort", "Voglio insegnare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["lasciare", "å forlate / la", "Voglio lasciare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["mangiare", "å spise", "Voglio mangiare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["mostrare", "å vise", "Voglio mostrare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["nascere", "å bli født", "Voglio nascere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["ottenere", "å få / oppnå", "Voglio ottenere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["pagare", "å betale", "Voglio pagare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["pensare", "å tenke / tro", "Voglio pensare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["permettere", "å tillate", "Voglio permettere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["piacere", "å like / behage", "Voglio piacere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["potere", "å kunne", "Voglio poter.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["presentare", "å presentere", "Voglio presentare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["produrre", "å produsere", "Voglio produrre.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["promettere", "å love", "Voglio promettere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["ricordare", "å huske", "Voglio ricordare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["rimanere", "å bli igjen / forbli", "Voglio rimanere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["ripetere", "å gjenta", "Voglio ripetere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["rispondere", "å svare", "Voglio rispondere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["sapere", "å vite / kunne", "Voglio sapere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["sembrare", "å virke / se ut til", "Voglio sembrare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["sperare", "å håpe", "Voglio sperare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["studiare", "å studere", "Voglio studiare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["succedere", "å skje", "Voglio succedere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["tenere", "å holde", "Voglio tenere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["trovare", "å finne", "Voglio trovare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["usare", "å bruke", "Voglio usare.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["volere", "å ville / ønske", "Voglio volere.", "Et italiensk verb. Øv også på presens og passato prossimo.", "verb"],
+["adesso", "nå", "Lo sento adesso.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["abbastanza", "adverb", "Lo sento abbastanza.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["assolutamente", "adverb", "Lo sento assolutamente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["ancora", "adverb", "Lo sento ancora.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["appena", "adverb", "Lo sento appena.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["attentamente", "adverb", "Lo sento attentamente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["avanti", "framover", "Lo sento avanti.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["bene", "bra", "Lo sento bene.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["certamente", "adverb", "Lo sento certamente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["circa", "adverb", "Lo sento circa.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["chiaramente", "adverb", "Lo sento chiaramente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["completamente", "adverb", "Lo sento completamente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["comunque", "adverb", "Lo sento comunque.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["davvero", "adverb", "Lo sento davvero.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["dentro", "inne", "Lo sento dentro.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["dopo", "etterpå", "Lo sento dopo.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["durante", "adverb", "Lo sento durante.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["facilmente", "adverb", "Lo sento facilmente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["finalmente", "adverb", "Lo sento finalmente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["forse", "kanskje", "Lo sento forse.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["fuori", "ute", "Lo sento fuori.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["generalmente", "adverb", "Lo sento generalmente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["già", "adverb", "Lo sento già.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["insieme", "sammen", "Lo sento insieme.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["invece", "adverb", "Lo sento invece.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["lontano", "langt borte", "Lo sento lontano.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["male", "dårlig", "Lo sento male.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["meglio", "bedre", "Lo sento meglio.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["molto", "mye / veldig", "Lo sento molto.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["naturalmente", "adverb", "Lo sento naturalmente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["normalmente", "adverb", "Lo sento normalmente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["oggi", "i dag", "Lo sento oggi.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["ovviamente", "adverb", "Lo sento ovviamente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["piano", "adverb", "Lo sento piano.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["poco", "lite", "Lo sento poco.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["poi", "adverb", "Lo sento poi.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["presto", "adverb", "Lo sento presto.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["probabilmente", "adverb", "Lo sento probabilmente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["proprio", "adverb", "Lo sento proprio.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["quasi", "adverb", "Lo sento quasi.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["raramente", "adverb", "Lo sento raramente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["sempre", "alltid", "Lo sento sempre.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["spesso", "ofte", "Lo sento spesso.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["subito", "med en gang", "Lo sento subito.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["tardi", "sent", "Lo sento tardi.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["troppo", "for mye", "Lo sento troppo.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["veramente", "adverb", "Lo sento veramente.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["vicino", "nær", "Lo sento vicino.", "Et italiensk adverb eller uttrykk som er nyttig i dagligtale.", "other"],
+["accoglienza", "mottakelse / gjestfrihet", "La parola di oggi è «accoglienza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["acquisto", "kjøp", "La parola di oggi è «acquisto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["attività", "aktivitet", "La parola di oggi è «attività».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["autore", "forfatter", "La parola di oggi è «autore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["autorità", "myndighet / autoritet", "La parola di oggi è «autorità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["avvocato", "advokat", "La parola di oggi è «avvocato».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["azienda", "bedrift", "La parola di oggi è «azienda».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["benvenuto", "velkomst", "La parola di oggi è «benvenuto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["capacità", "evne / kapasitet", "La parola di oggi è «capacità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["categoria", "kategori", "La parola di oggi è «categoria».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["città", "by", "La parola di oggi è «città».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["classe", "klasse", "La parola di oggi è «classe».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["comunicazione", "kommunikasjon", "La parola di oggi è «comunicazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["comunità", "fellesskap / samfunn", "La parola di oggi è «comunità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["conoscenza", "kunnskap / bekjentskap", "La parola di oggi è «conoscenza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["conseguenza", "konsekvens", "La parola di oggi è «conseguenza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["costruzione", "bygging / konstruksjon", "La parola di oggi è «costruzione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["contratto", "kontrakt", "La parola di oggi è «contratto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["conversazione", "samtale", "La parola di oggi è «conversazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["coppia", "par", "La parola di oggi è «coppia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["crescita", "vekst", "La parola di oggi è «crescita».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["data", "dato", "La parola di oggi è «data».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["diritto", "rett / rettighet", "La parola di oggi è «diritto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["direzione", "retning / ledelse", "La parola di oggi è «direzione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["economia", "økonomi", "La parola di oggi è «economia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["elemento", "element", "La parola di oggi è «elemento».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["emozione", "følelse", "La parola di oggi è «emozione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["entrata", "inngang / inntekt", "La parola di oggi è «entrata».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["evento", "hendelse / arrangement", "La parola di oggi è «evento».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["fase", "fase", "La parola di oggi è «fase».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["fenomeno", "fenomen", "La parola di oggi è «fenomeno».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["figura", "figur / skikkelse", "La parola di oggi è «figura».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["funzione", "funksjon", "La parola di oggi è «funzione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["gestione", "ledelse / forvaltning", "La parola di oggi è «gestione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["gioventù", "ungdom", "La parola di oggi è «gioventù».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["identità", "identitet", "La parola di oggi è «identità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["industria", "industri", "La parola di oggi è «industria».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["iniziativa", "initiativ", "La parola di oggi è «iniziativa».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["istituzione", "institusjon", "La parola di oggi è «istituzione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["lavoro", "arbeid / jobb", "La parola di oggi è «lavoro».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["legge", "lov", "La parola di oggi è «legge».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["libertà", "frihet", "La parola di oggi è «libertà».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["linea", "linje", "La parola di oggi è «linea».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["livello", "nivå", "La parola di oggi è «livello».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["luogo", "sted", "La parola di oggi è «luogo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["maggioranza", "flertall", "La parola di oggi è «maggioranza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["materia", "fag / materiale", "La parola di oggi è «materia».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["metodo", "metode", "La parola di oggi è «metodo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["obiettivo", "mål", "La parola di oggi è «obiettivo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["organizzazione", "organisasjon", "La parola di oggi è «organizzazione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["pagina", "side", "La parola di oggi è «pagina».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["parte", "del", "La parola di oggi è «parte».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["periodo", "periode", "La parola di oggi è «periodo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["politica", "politikk", "La parola di oggi è «politica».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["posizione", "posisjon / stilling", "La parola di oggi è «posizione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["pratica", "praksis", "La parola di oggi è «pratica».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["presenza", "tilstedeværelse", "La parola di oggi è «presenza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["problema", "problem", "La parola di oggi è «problema».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["processo", "prosess / rettssak", "La parola di oggi è «processo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["prodotto", "produkt", "La parola di oggi è «prodotto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["proposta", "forslag", "La parola di oggi è «proposta».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["punto", "punkt", "La parola di oggi è «punto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ricerca", "forskning / søk", "La parola di oggi è «ricerca».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["rischio", "risiko", "La parola di oggi è «rischio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["ruolo", "rolle", "La parola di oggi è «ruolo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["scelta", "valg", "La parola di oggi è «scelta».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["scienza", "vitenskap", "La parola di oggi è «scienza».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["settore", "sektor / område", "La parola di oggi è «settore».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["senso", "sans / mening", "La parola di oggi è «senso».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["sistema", "system", "La parola di oggi è «sistema».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["soluzione", "løsning", "La parola di oggi è «soluzione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["sviluppo", "utvikling", "La parola di oggi è «sviluppo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["tema", "tema", "La parola di oggi è «tema».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["territorio", "område / territorium", "La parola di oggi è «territorio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["tipo", "type", "La parola di oggi è «tipo».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["tradizione", "tradisjon", "La parola di oggi è «tradizione».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["trasporto", "transport", "La parola di oggi è «trasporto».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["turno", "skift / tur", "La parola di oggi è «turno».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["unità", "enhet", "La parola di oggi è «unità».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["uso", "bruk", "La parola di oggi è «uso».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"],
+["vantaggio", "fordel", "La parola di oggi è «vantaggio».", "Et italiensk substantiv. Lær ordet sammen med artikkel og flertallsform når du møter det i en setning.", "noun"]
+);
+
+// Fjern dubletter og behold den første, mest kuraterte oppføringen.
+{
+  const seenWords = new Set();
+  const uniqueWords = words.filter(w => {
+    const key = (w[0] + "|" + (w[4] || "other")).toLocaleLowerCase("it");
+    if (seenWords.has(key)) return false;
+    seenWords.add(key);
+    return true;
+  });
+  words.length = 0;
+  words.push(...uniqueWords);
+}
+
+// Kvalitetssikring av ordlisten: fjern dubletter og blokker ugyldige oversettelser.
+// Dette gjør også at gamle placeholder-verdier ikke kan vises dersom en eldre versjon
+// av appen ligger lagret i nettleseren.
+const INVALID_TRANSLATIONS = /^(se\s+forklaring|forklaring|se\s+mer|ukjent|undefined|null|-)$/i;
+const seenWords = new Set();
+for (let i = words.length - 1; i >= 0; i--) {
+  const w = words[i];
+  const key = String(w[0] || "").trim().toLocaleLowerCase("it");
+  const translation = String(w[1] || "").trim();
+  if (!key || !translation || INVALID_TRANSLATIONS.test(translation) || seenWords.has(key)) {
+    words.splice(i, 1);
+  } else {
+    seenWords.add(key);
+  }
+}
+
+const factCategories=[
+ {name:"Historie", facts:["Roma regnes tradisjonelt som grunnlagt i 753 f.Kr.", "Romerriket ble etablert under Augustus i 27 f.Kr.", "Vesuv hadde et stort utbrudd i år 79 e.Kr.", "Pompeii ble begravd av Vesuv-utbruddet i år 79.", "Vestromerriket falt i 476.", "Venezia vokste fram som en viktig handelsby i middelalderen.", "Universitetet i Bologna forbindes tradisjonelt med året 1088.", "Pisa var en av de italienske maritime republikkene.", "Genova var en mektig sjøfartsrepublikk i middelalderen.", "Venezia var en selvstendig republikk i mer enn tusen år.", "Dante Alighieri ble født i Firenze omkring 1265.", "Dantes Den guddommelige komedie ble skrevet tidlig på 1300-tallet.", "Renessansen fikk et viktig sentrum i Firenze.", "Leonardo da Vinci ble født i 1452.", "Michelangelo ble født i 1475.", "Columbus ble født i Genova i 1451, ifølge den vanligste historiske oppfatningen.", "Roma ble plyndret i 1527.", "Galileo Galilei ble født i Pisa i 1564.", "Napoleon opprettet Kongeriket Italia i 1805.", "Den italienske samlingsprosessen kalles Risorgimento.", "Kongeriket Italia ble opprettet i 1861.", "Viktor Emanuel II ble den første kongen av det samlede Italia.", "Giuseppe Garibaldi var en sentral skikkelse i Italias samling.", "Roma ble innlemmet i Kongeriket Italia i 1870.", "Roma ble Italias hovedstad i 1871.", "Italia gikk inn i første verdenskrig i 1915.", "Benito Mussolini kom til makten i 1922.", "Vatikanstaten ble opprettet gjennom Lateranavtalene i 1929.", "Italia gikk inn i andre verdenskrig i 1940.", "Mussolinis fascistregime falt i 1943.", "Italia ble republikk etter en folkeavstemning i 1946.", "Kvinner stemte i en nasjonal italiensk avstemning for første gang i 1946.", "Den italienske grunnloven trådte i kraft i 1948.", "Italia var med på å grunnlegge NATO i 1949.", "Italia var med på å undertegne Roma-traktatene i 1957.", "De olympiske sommerlekene ble arrangert i Roma i 1960.", "Fiat 500 ble lansert i 1957.", "Firenze ble rammet av en stor flom i 1966.", "Italia vant fotball-VM i 1934.", "Italia vant fotball-VM i 1938.", "Italia vant fotball-VM i 1982.", "Fotball-VM ble arrangert i Italia i 1990.", "Pompeii begynte å bli systematisk utgravd på 1700-tallet.", "Colosseum ble påbegynt på 70-tallet e.Kr.", "Pantheon i Roma fikk sin nåværende hovedform under keiser Hadrian.", "Via Appia var en av Romerrikets viktigste veier.", "Etruskerne levde i deler av dagens sentrale Italia før romersk dominans.", "Medici-familien hadde stor innflytelse i Firenze under renessansen.", "Sicilia har vært styrt av blant andre grekere, romere, arabere og normannere.", "Italia har hatt Roma som hovedstad siden 1871."]},
+ {name:"Mat", facts:["Pizza forbindes særlig med Napoli.", "Pizza Margherita lages klassisk med tomat, mozzarella og basilikum.", "Pesto alla genovese kommer fra Liguria.", "Risotto er særlig knyttet til Nord-Italia.", "Risotto alla milanese inneholder safran.", "Carbonara forbindes med Roma og Lazio.", "Tradisjonell carbonara lages vanligvis med egg, guanciale, pecorino romano og pepper.", "Parmigiano Reggiano kommer fra deler av Emilia-Romagna og Lombardia.", "Prosciutto di Parma kommer fra området rundt Parma.", "Balsamicoeddik er sterkt knyttet til Modena.", "Mozzarella di bufala er særlig knyttet til Campania.", "Tiramisù inneholder vanligvis mascarpone, kaffe og kakao.", "Gelato er den italienske varianten av iskrem.", "Espresso serveres vanligvis i en liten kopp.", "Cappuccino drikkes ofte til frokost i Italia.", "Focaccia forbindes særlig med Liguria.", "Arancini eller arancine er fylte, friterte risboller fra Sicilia.", "Cannoli er en kjent siciliansk dessert.", "Pecorino er ost laget av sauemelk.", "Pecorino Romano brukes mye i romerske pastaretter.", "Gorgonzola er en italiensk blåmuggost.", "Polenta er særlig vanlig i Nord-Italia.", "Lasagne er sterkt knyttet til Emilia-Romagna.", "Tagliatelle al ragù er en klassisk rett fra Bologna.", "I Bologna kalles kjøttsausen tradisjonelt ragù, ikke bare «bolognese».", "Orecchiette er en pastaform som forbindes med Puglia.", "Pasta alla norma er en siciliansk pastarett med aubergine.", "Cacio e pepe er en romersk pastarett med ost og pepper.", "Amatriciana lages vanligvis med guanciale, tomat og pecorino.", "Supplì er en romersk snack av fritert ris.", "Farinata er en ligurisk pannekakelignende rett laget av kikertmel.", "Ribollita er en tradisjonell toskansk suppe.", "Bistecca alla fiorentina forbindes med Firenze.", "Panzanella er en toskansk brødsalat.", "Piadina forbindes med Romagna.", "Mortadella forbindes særlig med Bologna.", "Grana Padano er en hard italiensk ost.", "Panettone forbindes tradisjonelt med Milano og jul.", "Pandoro forbindes med Verona og jul.", "Limoncello forbindes særlig med Sør-Italia.", "Marsala er en sterkvin fra Sicilia.", "Prosecco produseres hovedsakelig i Veneto og Friuli-Venezia Giulia.", "Chianti er et kjent vinområde i Toscana.", "Barolo er en vin fra Piemonte laget av nebbiolo-druen.", "Bruschetta består typisk av ristet brød med ulike toppinger.", "Italiensk mat varierer mye fra region til region.", "Olivenolje er en sentral ingrediens i mange italienske retter.", "Tomater kom til Europa fra Amerika etter Columbus-tiden.", "Pasta finnes i svært mange regionale former i Italia.", "Italienere bruker ofte «al dente» om pasta som fortsatt har litt tyggemotstand."]},
+ {name:"Italia etter 2000", facts:["Italia tok i bruk eurosedler og -mynter i 2002.", "Torino arrangerte vinter-OL i 2006.", "Italia vant fotball-VM i 2006.", "Finalen i fotball-VM 2006 ble spilt i Berlin.", "Italia slo Frankrike på straffer i VM-finalen i 2006.", "Et kraftig jordskjelv rammet L’Aquila i 2009.", "Expo 2015 ble arrangert i Milano.", "Expo 2015 hadde mat og bærekraft som sentrale temaer.", "Et kraftig jordskjelv rammet sentrale Italia i 2016.", "Italia kvalifiserte seg ikke til fotball-VM i 2018.", "Matera var europeisk kulturhovedstad i 2019.", "Italia var et av de første europeiske landene som ble hardt rammet av covid-19 i 2020.", "Italia innførte omfattende nasjonale koronarestriksjoner i mars 2020.", "Italia vant Eurovision Song Contest i 2021.", "Måneskin vant Eurovision 2021 med «Zitti e buoni».", "Italia vant fotball-EM i 2021.", "EM-finalen i 2021 ble spilt på Wembley i London.", "Italia slo England på straffer i EM-finalen i 2021.", "Roma var en av vertsbyene under fotball-EM som ble spilt i 2021.", "Italia kvalifiserte seg ikke til fotball-VM i 2022.", "Milano og Cortina d’Ampezzo ble valgt som vertskap for vinter-OL 2026.", "Vinter-OL 2026 ble arrangert under navnet Milano Cortina 2026.", "Italia har fortsatt euro som valuta etter 2000.", "Roma har fortsatt vært Italias hovedstad gjennom hele perioden etter 2000.", "Italia har vært medlem av EU gjennom hele perioden etter 2000.", "Italia har vært medlem av NATO gjennom hele perioden etter 2000.", "Venezia innførte i 2024 en prøveordning med adgangsavgift for enkelte dagsbesøkende.", "Genova var europeisk kulturhovedstad i 2004.", "Torino var verdens bokhovedstad i 2006–2007.", "Milano var vertskap for Expo i 2015.", "Matera fikk stor internasjonal oppmerksomhet som europeisk kulturhovedstad i 2019.", "Roma arrangerte Ryder Cup i golf i 2023.", "Ryder Cup 2023 ble spilt på Marco Simone Golf and Country Club utenfor Roma.", "Italia var vertskap for G7-toppmøtet i Puglia i 2024.", "Venezia har etter 2000 fortsatt arbeidet med MOSE-systemet mot høyvann.", "MOSE-barrierene ved Venezia ble tatt i bruk mot høyvann fra 2020.", "Det italienske landslaget vant EM for andre gang i 2021.", "Italia hadde vunnet fire herre-VM i fotball ved inngangen til 2026.", "Torino 2006 var Italias andre vinter-OL.", "Cortina d’Ampezzo arrangerte også vinter-OL i 1956.", "Sanremo-festivalen har fortsatt blitt arrangert årlig etter 2000.", "Måneskin fikk sitt internasjonale gjennombrudd i 2021.", "Euroen erstattet italienske lire som kontanter i 2002.", "Milano er fortsatt et av Europas viktigste sentre for mote og design.", "Milano Design Week har vært en stor internasjonal designbegivenhet etter 2000.", "Venezia-biennalen har fortsatt å arrangere internasjonale kunst- og arkitekturutstillinger etter 2000.", "Filmfestivalen i Venezia har fortsatt å bli arrangert på Lido etter 2000.", "Giro d’Italia har blitt arrangert hvert år etter 2000 bortsett fra endringer i tidspunkt enkelte år.", "San Siro i Milano har fortsatt vært hjemmebane for både Milan og Inter etter 2000.", "Italia markerte 150-årsjubileet for landets samling i 2011."]},
+ {name:"Politikk", facts:["Italia er en parlamentarisk republikk.", "Roma er republikkens hovedstad.", "Italias grunnlov trådte i kraft 1. januar 1948.", "Det italienske parlamentet har to kamre.", "Underhuset heter Camera dei deputati.", "Overhuset heter Senato della Repubblica.", "Presidenten er Italias statsoverhode.", "Statsministeren leder regjeringen.", "Den italienske presidentens mandatperiode er sju år.", "Presidenten velges av parlamentet sammen med regionale delegater.", "Italia har 20 regioner.", "Fem italienske regioner har særskilt autonom status.", "Sicilia er en region med særskilt autonom status.", "Sardinia er en region med særskilt autonom status.", "Valle d’Aosta har særskilt autonom status.", "Friuli-Venezia Giulia har særskilt autonom status.", "Trentino-Alto Adige/Südtirol har særskilt autonom status.", "Trentino-Alto Adige/Südtirol består av de autonome provinsene Trento og Bolzano.", "Italia er medlem av Den europeiske union.", "Italia var blant de seks landene som undertegnet Roma-traktatene i 1957.", "Italia er medlem av NATO.", "Den italienske republikken ble opprettet i 1946.", "Monarkiet ble avskaffet etter folkeavstemningen i 1946.", "Den italienske grunnloven kan ikke endre den republikanske styreformen.", "Regjeringen må ha parlamentarisk tillit.", "Begge kamrene deltar i den nasjonale lovgivningen.", "Camera dei deputati holder til i Palazzo Montecitorio i Roma.", "Senato della Repubblica holder til i Palazzo Madama i Roma.", "Presidentens offisielle residens er Quirinalpalasset i Roma.", "Italias forfatningsdomstol heter Corte costituzionale.", "Forfatningsdomstolen holder til i Palazzo della Consulta i Roma.", "Regionene har egne regionale råd.", "Regionene har lovgivende myndighet på områder som grunnloven gir dem kompetanse over.", "Kommunene er en del av republikkens konstitusjonelle territorielle oppbygning.", "Metropolitanbyer er også nevnt i den italienske grunnloven.", "Roma har en særstilling som republikkens hovedstad.", "Italia har både nasjonale og regionale valg.", "Det finnes folkeavstemninger på nasjonalt nivå i Italia.", "Grunnlovens artikkel 1 beskriver Italia som en demokratisk republikk grunnlagt på arbeid.", "Grunnloven beskytter lokale autonomier.", "Den lovgivende makten utøves av staten og regionene innenfor deres respektive kompetanse.", "Utenrikspolitikk er et område der staten har eksklusiv lovgivningsmyndighet.", "Forsvar er et område der staten har eksklusiv lovgivningsmyndighet.", "Valuta er et område der staten har eksklusiv lovgivningsmyndighet.", "Regionene kan ha egne vedtekter innenfor grunnlovens rammer.", "Regionalrådet utøver regionens lovgivende myndighet.", "Den regionale regjeringen, Giunta, er regionens utøvende organ.", "Presidenten for en region leder den regionale Giunta.", "Italias politiske system bygger på maktfordeling mellom flere konstitusjonelle organer.", "Den italienske republikken omfatter kommuner, provinser, metropolitanbyer, regioner og staten."]}
+];
+let factIndex=0;
+function nextFact(){
+ const categoryIndex=factIndex%factCategories.length;
+ const round=Math.floor(factIndex/factCategories.length);
+ const category=factCategories[categoryIndex];
+ const fact=category.facts[round%category.facts.length];
+ factIndex++;
+ return category.name+" • "+fact;
+}
+
+
+let index=0;
+let clicks=0;
+let sessionWordClicks=0;
+let activity=JSON.parse(localStorage.getItem("italianActivity")||'{"total":0,"days":{}}');
+if(!activity.days) activity.days={};
+if(!activity.total) activity.total=0;
+let queue=[];
+let queuePos=0;
+let selectedType=localStorage.getItem("italianWordType")||"all";
+
+function filteredWords(){
+ return selectedType==="all" ? words : words.filter(w=>w[4]===selectedType);
+}
+
+function shuffle(arr){
+ const a=[...arr];
+ for(let i=a.length-1;i>0;i--){
+  const j=Math.floor(Math.random()*(i+1));
+  [a[i],a[j]]=[a[j],a[i]];
+ }
+ return a;
+}
+
+function resetQueue(){
+ queue=shuffle(filteredWords());
+ queuePos=0;
+ index=0;
+}
+
+function currentWord(){
+ if(!queue.length || queuePos>=queue.length) resetQueue();
+ return queue[queuePos];
+}
+
+function changeType(){
+ selectedType=document.getElementById("wordType").value;
+ localStorage.setItem("italianWordType",selectedType);
+ resetQueue();
+ displayWord();
+}
+let saved=JSON.parse(localStorage.getItem("savedItalianWords")||"[]");
+// Oppgrader lagrede ord fra eldre versjoner til den kvalitetssikrede ordlisten.
+// Dermed forsvinner gamle «Se forklaring»-oversettelser fra localStorage.
+const canonicalByWord = new Map(words.map(w=>[String(w[0]).toLocaleLowerCase("it"), w]));
+saved = saved
+  .map(w=>canonicalByWord.get(String((w&&w[0])||"").toLocaleLowerCase("it")))
+  .filter(Boolean);
+saved = [...new Map(saved.map(w=>[String(w[0]).toLocaleLowerCase("it"),w])).values()];
+localStorage.setItem("savedItalianWords",JSON.stringify(saved));
+
+function cleanNorwegianMeaning(text){
+ return String(text||"").replace(/^å\s+/,"").split(" / ")[0];
+}
+
+function exampleFor(w){
+ // Eksempeltypen følger køen: c’è → ci sono → è. Innen hver type varierer setningen mye.
+ const mode=queuePos%3;
+ const word=w[0];
+ const meaning=cleanNorwegianMeaning(w[1]);
+ const seed=[...word].reduce((a,c)=>a+c.codePointAt(0),0)+queuePos;
+ const variants={
+  0:[
+   ["C’è una parola che sento spesso in Italia: «{w}».","Det er et ord jeg ofte hører i Italia: «{m}»."],
+   ["C’è un termine utile da ricordare oggi: «{w}».","Det er et nyttig ord å huske i dag: «{m}»."],
+   ["C’è una parola che vorrei usare più spesso: «{w}».","Det er et ord jeg gjerne vil bruke oftere: «{m}»."],
+   ["C’è un’espressione che vale la pena imparare: «{w}».","Det er et uttrykk som er verdt å lære: «{m}»."],
+   ["C’è una parola nuova sul mio elenco: «{w}».","Det er et nytt ord på listen min: «{m}»."],
+   ["C’è una parola che può essere utile in viaggio: «{w}».","Det er et ord som kan være nyttig på reise: «{m}»."],
+   ["C’è un vocabolo che oggi voglio memorizzare: «{w}».","Det er et ord jeg vil lære meg i dag: «{m}»."],
+   ["C’è una parola interessante nella lezione di oggi: «{w}».","Det er et interessant ord i dagens leksjon: «{m}»."],
+   ["C’è una parola che mi ricorda una conversazione in italiano: «{w}».","Det er et ord som minner meg om en samtale på italiensk: «{m}»."],
+   ["C’è un termine che posso provare a usare domani: «{w}».","Det er et ord jeg kan prøve å bruke i morgen: «{m}»."],
+   ["C’è una parola che non voglio dimenticare: «{w}».","Det er et ord jeg ikke vil glemme: «{m}»."],
+   ["C’è un vocabolo italiano che merita attenzione: «{w}».","Det er et italiensk ord som fortjener oppmerksomhet: «{m}»."],
+   ["C’è una parola che potrei incontrare in un libro: «{w}».","Det er et ord jeg kan støte på i en bok: «{m}»."],
+   ["C’è un termine che può comparire in una conversazione: «{w}».","Det er et ord som kan dukke opp i en samtale: «{m}»."],
+   ["C’è una parola da aggiungere al mio vocabolario: «{w}».","Det er et ord jeg bør legge til i ordforrådet mitt: «{m}»."],
+   ["C’è una parola che oggi mi sembra più facile: «{w}».","Det er et ord som virker lettere for meg i dag: «{m}»."],
+   ["C’è un vocabolo che voglio riconoscere subito: «{w}».","Det er et ord jeg vil kjenne igjen med én gang: «{m}»."],
+   ["C’è una parola italiana da portare con me oggi: «{w}».","Det er et italiensk ord jeg tar med meg i dag: «{m}»."],
+   ["C’è un termine che potrebbe servirmi al ristorante o per strada: «{w}».","Det er et ord som kan komme til nytte på restaurant eller ute på gata: «{m}»."],
+   ["C’è una parola che voglio saper usare senza pensarci: «{w}».","Det er et ord jeg vil kunne bruke uten å tenke meg om: «{m}»."],
+   ["C’è un nuovo vocabolo nella mia giornata: «{w}».","Det er et nytt ord i dagen min: «{m}»."],
+   ["C’è una parola che posso ripetere ad alta voce: «{w}».","Det er et ord jeg kan gjenta høyt: «{m}»."],
+   ["C’è un termine che voglio capire quando lo sento: «{w}».","Det er et ord jeg vil forstå når jeg hører det: «{m}»."],
+   ["C’è una parola che oggi entra nel mio italiano: «{w}».","Det er et ord som blir en del av italiensken min i dag: «{m}»."],
+   ["C’è un vocabolo da tenere a mente: «{w}».","Det er et ord å ha i bakhodet: «{m}»."],
+   ["C’è una parola che potrebbe tornarmi utile a Roma: «{w}».","Det er et ord som kan komme til nytte i Roma: «{m}»."],
+   ["C’è un termine che voglio riconoscere nei film italiani: «{w}».","Det er et ord jeg vil kjenne igjen i italienske filmer: «{m}»."],
+   ["C’è una parola che posso cercare di usare questa settimana: «{w}».","Det er et ord jeg kan prøve å bruke denne uken: «{m}»."],
+   ["C’è un vocabolo che rende il mio italiano un po’ più ricco: «{w}».","Det er et ord som gjør italiensken min litt rikere: «{m}»."],
+   ["C’è una parola che oggi vale la pena ripassare: «{w}».","Det er et ord det er verdt å repetere i dag: «{m}»." ]
+  ],
+  1:[
+   ["Ci sono molte parole utili, e oggi scelgo «{w}».","Det finnes mange nyttige ord, og i dag velger jeg «{m}»."],
+   ["Ci sono parole che si ricordano subito; una è «{w}».","Det finnes ord man husker med én gang; ett av dem er «{m}»."],
+   ["Ci sono tanti vocaboli da imparare, tra cui «{w}».","Det finnes mange ord å lære, blant annet «{m}»."],
+   ["Ci sono parole che incontro spesso quando studio, come «{w}».","Det finnes ord jeg ofte møter når jeg studerer, som «{m}»."],
+   ["Ci sono nuovi termini nella mia lista; oggi tocca a «{w}».","Det er flere nye ord på listen min; i dag er det «{m}» sin tur."],
+   ["Ci sono parole che possono aiutarmi in Italia, per esempio «{w}».","Det finnes ord som kan hjelpe meg i Italia, for eksempel «{m}»."],
+   ["Ci sono vocaboli facili da riconoscere ma difficili da usare; provo con «{w}».","Det finnes ord som er lette å kjenne igjen, men vanskeligere å bruke; jeg prøver med «{m}»."],
+   ["Ci sono parole che voglio capire al volo, come «{w}».","Det finnes ord jeg vil forstå med én gang, som «{m}»."],
+   ["Ci sono tanti modi per ampliare il vocabolario; oggi parto da «{w}».","Det finnes mange måter å utvide ordforrådet på; i dag starter jeg med «{m}»."],
+   ["Ci sono parole che vale la pena ripetere più volte, tra cui «{w}».","Det finnes ord det er verdt å gjenta flere ganger, blant annet «{m}»."],
+   ["Ci sono termini che posso incontrare ogni giorno; «{w}» è uno di questi.","Det finnes ord jeg kan møte hver dag; «{m}» er ett av dem."],
+   ["Ci sono parole che mi aiutano a parlare con più sicurezza, come «{w}».","Det finnes ord som hjelper meg å snakke sikrere, som «{m}»."],
+   ["Ci sono vocaboli che vorrei usare nella prossima conversazione, incluso «{w}».","Det finnes ord jeg gjerne vil bruke i neste samtale, blant annet «{m}»."],
+   ["Ci sono parole italiane che suonano bene; oggi noto «{w}».","Det finnes italienske ord som klinger fint; i dag legger jeg merke til «{m}»."],
+   ["Ci sono termini che diventano facili con la pratica, come «{w}».","Det finnes ord som blir lette med øvelse, som «{m}»."],
+   ["Ci sono parole che posso associare a un’immagine; oggi provo con «{w}».","Det finnes ord jeg kan knytte til et bilde; i dag prøver jeg med «{m}»."],
+   ["Ci sono vocaboli che voglio ricordare prima del prossimo viaggio, come «{w}».","Det finnes ord jeg vil huske før neste reise, som «{m}»."],
+   ["Ci sono parole che sento nei podcast italiani; «{w}» può essere una di queste.","Det finnes ord jeg hører i italienske podkaster; «{m}» kan være ett av dem."],
+   ["Ci sono termini che posso annotare sul telefono, tra cui «{w}».","Det finnes ord jeg kan notere på telefonen, blant annet «{m}»."],
+   ["Ci sono parole che diventano più naturali ogni volta che le uso; oggi provo «{w}».","Det finnes ord som blir mer naturlige hver gang jeg bruker dem; i dag prøver jeg «{m}»."],
+   ["Ci sono vocaboli che posso imparare durante una pausa, come «{w}».","Det finnes ord jeg kan lære i en pause, som «{m}»."],
+   ["Ci sono parole che mi fanno capire meglio una frase; oggi studio «{w}».","Det finnes ord som gjør at jeg forstår en setning bedre; i dag studerer jeg «{m}»."],
+   ["Ci sono termini che vorrei riconoscere al bar, in stazione o al mercato; uno è «{w}».","Det finnes ord jeg vil kjenne igjen på kafé, på stasjonen eller på markedet; ett er «{m}»."],
+   ["Ci sono parole che posso usare per rendere una frase più precisa, come «{w}».","Det finnes ord jeg kan bruke for å gjøre en setning mer presis, som «{m}»."],
+   ["Ci sono vocaboli che restano in mente grazie a un buon esempio; oggi provo con «{w}».","Det finnes ord som fester seg takket være et godt eksempel; i dag prøver jeg med «{m}»."],
+   ["Ci sono parole che vorrei sapere prima di arrivare in Italia; «{w}» è sulla lista.","Det finnes ord jeg gjerne vil kunne før jeg kommer til Italia; «{m}» står på listen."],
+   ["Ci sono termini che posso incontrare leggendo un giornale, come «{w}».","Det finnes ord jeg kan møte når jeg leser en avis, som «{m}»."],
+   ["Ci sono parole che imparerei volentieri in una conversazione vera; una è «{w}».","Det finnes ord jeg gjerne ville lært i en ekte samtale; ett er «{m}»."],
+   ["Ci sono vocaboli che mi avvicinano un po’ di più all’italiano naturale, come «{w}».","Det finnes ord som bringer meg litt nærmere naturlig italiensk, som «{m}»."],
+   ["Ci sono parole da scoprire ogni giorno; oggi è il turno di «{w}».","Det finnes ord å oppdage hver dag; i dag er det «{m}» sin tur."]
+  ],
+  2:[
+   ["«{w}» è una parola che oggi voglio ricordare.","«{m}» er et ord jeg vil huske i dag."],
+   ["«{w}» è il vocabolo che scelgo per questo momento.","«{m}» er ordet jeg velger akkurat nå."],
+   ["«{w}» è una parola utile da avere nel proprio vocabolario.","«{m}» er et nyttig ord å ha i ordforrådet."],
+   ["«{w}» è il termine che provo a memorizzare adesso.","«{m}» er ordet jeg prøver å lære meg nå."],
+   ["«{w}» è una parola che potrei sentire durante un viaggio.","«{m}» er et ord jeg kan høre på en reise."],
+   ["«{w}» è il vocabolo italiano su cui mi concentro oggi.","«{m}» er det italienske ordet jeg fokuserer på i dag."],
+   ["«{w}» è una parola che voglio riconoscere senza tradurre mentalmente.","«{m}» er et ord jeg vil kjenne igjen uten å oversette i hodet."],
+   ["«{w}» è il termine che aggiungo oggi alla mia memoria.","«{m}» er ordet jeg legger til i hukommelsen i dag."],
+   ["«{w}» è una parola che può rendere il mio italiano più naturale.","«{m}» er et ord som kan gjøre italiensken min mer naturlig."],
+   ["«{w}» è il vocabolo che proverò a usare in una frase.","«{m}» er ordet jeg skal prøve å bruke i en setning."],
+   ["«{w}» è una parola da riconoscere quando qualcuno parla velocemente.","«{m}» er et ord å kjenne igjen når noen snakker fort."],
+   ["«{w}» è il termine che oggi porto con me.","«{m}» er ordet jeg tar med meg i dag."],
+   ["«{w}» è una parola che posso incontrare al cinema o in televisione.","«{m}» er et ord jeg kan møte på kino eller TV."],
+   ["«{w}» è il vocabolo che voglio rendere familiare.","«{m}» er ordet jeg vil gjøre kjent for meg."],
+   ["«{w}» è una parola che può comparire in una conversazione quotidiana.","«{m}» er et ord som kan dukke opp i en hverdagssamtale."],
+   ["«{w}» è il termine che ripasso prima di passare al prossimo.","«{m}» er ordet jeg repeterer før jeg går videre til det neste."],
+   ["«{w}» è una parola che vorrei usare con sicurezza.","«{m}» er et ord jeg gjerne vil bruke med sikkerhet."],
+   ["«{w}» è il vocabolo di oggi: domani ne arriverà un altro.","«{m}» er dagens ord; i morgen kommer et nytt."],
+   ["«{w}» è una parola che posso collegare a una situazione reale.","«{m}» er et ord jeg kan knytte til en virkelig situasjon."],
+   ["«{w}» è il termine che scelgo di non dimenticare.","«{m}» er ordet jeg velger å ikke glemme."],
+   ["«{w}» è una parola che potrebbe essermi utile a Napoli, Milano o Firenze.","«{m}» er et ord som kan være nyttig i Napoli, Milano eller Firenze."],
+   ["«{w}» è il vocabolo che provo a riconoscere a orecchio.","«{m}» er ordet jeg prøver å kjenne igjen på lyden."],
+   ["«{w}» è una parola che voglio capire senza fermare la conversazione.","«{m}» er et ord jeg vil forstå uten å stoppe samtalen."],
+   ["«{w}» è il termine che oggi entra nella mia lista personale.","«{m}» er ordet som kommer inn på min personlige liste i dag."],
+   ["«{w}» è una parola che posso esercitarmi a pronunciare ad alta voce.","«{m}» er et ord jeg kan øve på å uttale høyt."],
+   ["«{w}» è il vocabolo che vorrei riconoscere leggendo un menu o un cartello.","«{m}» er ordet jeg gjerne vil kjenne igjen når jeg leser en meny eller et skilt."],
+   ["«{w}» è una parola che oggi provo a fare mia.","«{m}» er et ord jeg prøver å gjøre til mitt i dag."],
+   ["«{w}» è il termine che scelgo per allenare il mio italiano.","«{m}» er ordet jeg velger for å trene italiensken min."],
+   ["«{w}» è una parola che voglio capire anche fuori dal libro di testo.","«{m}» er et ord jeg vil forstå også utenfor læreboka."],
+   ["«{w}» è il vocabolo che chiude questa piccola tappa di studio.","«{m}» er ordet som avslutter denne lille studieøkten."]
+  ]
+ };
+ const pool=variants[mode];
+ const pair=pool[seed%pool.length];
+ const fill=t=>t.replaceAll("{w}",word).replaceAll("{m}",meaning);
+ return {it:fill(pair[0]), no:fill(pair[1])};
+}
+
+function todayKey(){
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function recordWordClick(){
+ sessionWordClicks++;
+ activity.total++;
+ const day=todayKey();
+ activity.days[day]=(activity.days[day]||0)+1;
+ localStorage.setItem("italianActivity",JSON.stringify(activity));
+ renderActivity();
+}
+
+function renderActivity(){
+ const day=todayKey();
+ document.getElementById("activityTotal").textContent=activity.total||0;
+ document.getElementById("activityToday").textContent=activity.days[day]||0;
+ document.getElementById("activitySession").textContent=sessionWordClicks;
+ document.getElementById("activityDays").textContent=Object.keys(activity.days).filter(k=>activity.days[k]>0).length;
+}
+
+function showActivity(){
+ const el=document.getElementById("activityPage");
+ el.style.display=el.style.display==="block"?"none":"block";
+ renderActivity();
+}
+
+function displayWord(){
+ document.getElementById("factCard").style.display="none";
+ document.getElementById("wordCard").style.display="block";
+ const w=currentWord();
+ document.getElementById("word").textContent=w[0];
+ document.getElementById("translation").textContent=w[1];
+ const ex=exampleFor(w);
+ document.getElementById("info").innerHTML="<b>Eksempel:</b> <i>"+ex.it+"</i><br><br><b>Norsk:</b> "+ex.no;
+ document.getElementById("counter").textContent=(queuePos+1)+" / "+filteredWords().length+" før listen blandes på nytt";
+ updateSave();
+}
+
+function next(){
+ clicks++;
+ recordWordClick();
+ if(clicks%10===0){
+   document.getElementById("wordCard").style.display="none";
+   document.getElementById("factCard").style.display="block";
+   document.getElementById("fact").textContent=nextFact();
+ }else{
+   queuePos++;
+   if(queuePos>=queue.length) resetQueue();
+   displayWord();
+ }
+}
+
+function saveWord(){
+ const w=currentWord();
+ const pos=saved.findIndex(x=>x[0]===w[0]);
+ if(pos===-1) saved.push(w); else saved.splice(pos,1);
+ localStorage.setItem("savedItalianWords",JSON.stringify(saved));
+ updateSave();
+ renderSaved();
+}
+
+function updateSave(){
+ const current=currentWord();
+ const yes=current && saved.some(x=>x[0]===current[0]);
+ const b=document.getElementById("saveBtn");
+ b.textContent=yes?"★ Lagret":"☆ Lagre ord";
+ b.className=yes?"save savedButton":"save";
+}
+
+function showSaved(){
+ const el=document.getElementById("savedList");
+ el.style.display=el.style.display==="block"?"none":"block";
+ renderSaved();
+}
+
+function renderSaved(){
+ const el=document.getElementById("savedWords");
+ if(!saved.length){el.innerHTML="<p>Ingen lagrede ord ennå.</p>";return;}
+ el.innerHTML=saved.map((w,i)=>"<div class='item'><b>"+w[0]+"</b> – "+w[1]+"<br><button class='remove' onclick='removeWord("+i+")'>Fjern</button></div>").join("");
+}
+
+function removeWord(i){
+ saved.splice(i,1);
+ localStorage.setItem("savedItalianWords",JSON.stringify(saved));
+ renderSaved();
+ updateSave();
+}
+
+document.getElementById("wordType").value=selectedType;
+resetQueue();
+displayWord();
+renderSaved();
+renderActivity();
+</script>
+</body>
+</html>
