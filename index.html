@@ -1,91 +1,181 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="no">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>Dagens italiensk</title>
+<title>Italiensk ord</title>
 <style>
-:root{--bg:#f5f5f7;--card:#fff;--text:#171717;--muted:#666;--accent:#c62828;--line:#e6e6e6}
-*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-main{max-width:560px;margin:auto;padding:calc(18px + env(safe-area-inset-top)) 18px calc(30px + env(safe-area-inset-bottom))}
-header{text-align:center;padding:8px 0 18px} h1{font-size:29px;margin:0 0 4px} .sub{color:var(--muted)}
-.card{background:var(--card);border-radius:24px;padding:25px 22px;box-shadow:0 5px 24px #0000000d}
-.date{text-align:center;color:var(--muted);font-size:14px;margin-bottom:16px}.word{text-align:center;font-size:46px;font-weight:750;margin:4px 0}.type{text-align:center;color:var(--accent);font-weight:650;margin-bottom:20px}.translation{text-align:center;font-size:25px;font-weight:650;margin-bottom:20px}
-.section{border-top:1px solid var(--line);padding-top:17px;margin-top:17px}.label{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:7px}
-.example{font-size:18px;line-height:1.5}.example em{font-style:normal;font-weight:650}.nor{color:var(--muted)}
-.buttons{display:flex;gap:10px;margin-top:22px}.btn{flex:1;border:0;border-radius:14px;padding:13px 10px;font-size:16px;font-weight:650;background:#eee}.primary{background:var(--accent);color:white}
-.bottom{display:flex;gap:10px;margin-top:14px}.bottom button{flex:1}.saved{margin-top:18px;text-align:center;color:var(--muted);font-size:14px}
-.quiz{display:none;margin-top:14px}.quiz.show{display:block}.answers{display:grid;gap:9px;margin-top:12px}.answer{background:#f0f0f2;border:0;border-radius:13px;padding:13px;text-align:left;font-size:16px}.answer.correct{background:#dff5e5}.answer.wrong{background:#fde1e1}
-.note{margin-top:18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.45}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f4f4;margin:0;color:#222}
+.app{max-width:600px;margin:auto;padding:25px 18px}
+h1{text-align:center}
+.card{background:white;padding:28px 22px;border-radius:20px;box-shadow:0 4px 15px #0001;margin:20px 0}
+.word{text-align:center;font-size:42px;font-weight:700;margin:10px}
+.translation{text-align:center;font-size:23px;margin:15px}
+.info{background:#f4f4f4;padding:15px;border-radius:12px;line-height:1.5}
+button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:13px;font-size:18px;font-weight:600}
+.next{background:#222;color:white}
+.save{background:#e5e5ea}
+.savedButton{background:#d8f5df}
+.listButton{background:white;border:1px solid #ccc}
+.savedList{display:none}
+.item{background:#f4f4f4;padding:13px;border-radius:10px;margin:8px 0}
+.remove{width:auto;padding:7px 10px;font-size:14px}
+.fact{font-size:19px;line-height:1.5}
+.counter{text-align:center;color:#777;margin-top:12px;font-size:14px}
 </style>
 </head>
 <body>
-<main>
-<header><h1>🇮🇹 Dagens italiensk</h1><div class="sub">Ett nytt italiensk ord hver dag</div></header>
-<section class="card">
-  <div class="date" id="date"></div>
-  <div class="word" id="word"></div>
-  <div class="type" id="type"></div>
-  <div class="translation" id="translation"></div>
+<div class="app">
+<h1>Italiensk hver dag 🇮🇹</h1>
 
-  <div class="section"><div class="label">Forklaring</div><div id="explanation"></div></div>
-  <div class="section"><div class="label">Eksempel</div><div class="example" id="example"></div></div>
+<div id="wordCard" class="card">
+<div id="word" class="word"></div>
+<div id="translation" class="translation"></div>
+<div id="info" class="info"></div>
+<button id="saveBtn" class="save" onclick="saveWord()">☆ Lagre ord</button>
+<button class="next" onclick="next()">Neste ord →</button>
+<div id="counter" class="counter"></div>
+</div>
 
-  <div class="buttons">
-    <button class="btn primary" onclick="speak()">🔊 Uttale</button>
-    <button class="btn" onclick="saveWord()">⭐ Lagre</button>
-  </div>
-  <div class="bottom">
-    <button class="btn" onclick="showQuiz()">📝 Miniquiz</button>
-  </div>
-  <div class="quiz" id="quiz">
-    <div class="label">Hva betyr ordet?</div>
-    <div class="answers" id="answers"></div>
-    <div id="quizResult" class="saved"></div>
-  </div>
-  <div id="saved" class="saved"></div>
-</section>
-<div class="note">Tips: I Safari kan du velge <b>Del → Legg til på Hjem-skjerm</b> for å bruke den som en app.</div>
-</main>
+<div id="factCard" class="card" style="display:none">
+<h2>🇮🇹 Fakta om Italia</h2>
+<div id="fact" class="fact"></div>
+<button class="next" onclick="next()">Neste ord →</button>
+</div>
+
+<button class="listButton" onclick="showSaved()">📚 Lagrede ord</button>
+
+<div id="savedList" class="card savedList">
+<h2>Lagrede ord</h2>
+<div id="savedWords"></div>
+</div>
+</div>
+
 <script>
 const words=[
-{w:"oggi",t:"i dag",p:"adverb",e:"Brukes når du snakker om denne dagen.",ex:"Oggi vado al lavoro.",no:"I dag drar jeg på jobb."},
-{w:"affidarsi",t:"å stole på / overlate seg til",p:"refleksivt verb",e:"Brukes når man stoler på noen eller legger noe i noens hender.",ex:"Mi affido a te.",no:"Jeg stoler på deg."},
-{w:"soltanto",t:"bare / kun",p:"adverb",e:"Brukes for å begrense noe. Ofte omtrent som «bare» eller «kun».",ex:"Voglio soltanto un caffè.",no:"Jeg vil bare ha en kaffe."},
-{w:"maledetto",t:"forbannet / jævla",p:"adjektiv",e:"Et sterkt ord som uttrykker irritasjon eller forbannelse.",ex:"Quel maledetto traffico!",no:"Den forbannede trafikken!"},
-{w:"sbrigarsi",t:"å skynde seg",p:"refleksivt verb",e:"Brukes når noen må gjøre noe raskere.",ex:"Devo sbrigarmi.",no:"Jeg må skynde meg."},
-{w:"allora",t:"da / altså / så",p:"adverb",e:"Et svært vanlig ord med flere betydninger. Brukes blant annet for å gå videre i samtalen.",ex:"Allora, cosa facciamo?",no:"Så, hva gjør vi?"},
-{w:"comunque",t:"uansett / likevel",p:"adverb",e:"Brukes når noe gjelder til tross for det som nettopp er sagt.",ex:"Comunque, vengo con te.",no:"Uansett blir jeg med deg."},
-{w:"magari",t:"kanskje / om bare",p:"adverb",e:"Kan uttrykke mulighet eller et ønske, avhengig av sammenhengen.",ex:"Magari domani.",no:"Kanskje i morgen."},
-{w:"vicino",t:"nær / i nærheten",p:"adjektiv/adverb",e:"Brukes om noe som er nært i avstand.",ex:"Il ristorante è vicino.",no:"Restauranten er i nærheten."},
-{w:"bisogno",t:"behov",p:"substantiv",e:"Ofte brukt i uttrykket «avere bisogno di» – å trenge.",ex:"Ho bisogno di aiuto.",no:"Jeg trenger hjelp."},
-{w:"scegliere",t:"å velge",p:"verb",e:"Brukes når du velger mellom flere alternativer.",ex:"Devo scegliere un ristorante.",no:"Jeg må velge en restaurant."},
-{w:"riuscire",t:"å klare / lykkes med",p:"verb",e:"Ofte brukt med «a» + infinitiv: riuscire a fare qualcosa.",ex:"Riesco a capirlo.",no:"Jeg klarer å forstå det."}
+["affidarsi","å stole på / overlate seg til","Mi affido a te.","Et refleksivt verb som brukes når man stoler på eller overlater seg til noen."],
+["riuscire","å klare / lykkes med","Non riesco a dormire.","Brukes ofte som riuscire a + infinitiv."],
+["scegliere","å velge","Devo scegliere un ristorante.","Et svært vanlig verb."],
+["accorgersi","å legge merke til / oppdage","Mi sono accorto dell'errore.","Refleksivt verb, ofte brukt når man plutselig oppdager noe."],
+["invece","i stedet / derimot","Io invece preferisco il caffè.","Brukes for å sette to ting opp mot hverandre."],
+["ancora","fortsatt / ennå / igjen","Abito ancora qui.","Betydningen varierer med sammenhengen."],
+["appena","nettopp / så snart","Sono appena arrivato.","Et vanlig adverb med flere betydninger."],
+["magari","kanskje / gjerne / om bare","Magari domani!","Et svært vanlig og fleksibelt italiensk ord."],
+["comunque","uansett / likevel","Comunque, andiamo.","Svært vanlig i dagligtale."],
+["allora","da / altså / i så fall","Allora, che facciamo?","Et av de vanligste italienske småordene."],
+["soprattutto","særlig / framfor alt","Mi piace soprattutto la montagna.","Brukes for å fremheve noe."],
+["abbastanza","ganske / tilstrekkelig","È abbastanza facile.","Kan bety både ganske og nok."],
+["diventare","å bli","Vuole diventare medico.","Brukes om overgang fra én tilstand til en annen."],
+["mancare","å mangle / savne","Mi manca l'Italia.","Mi manca betyr omtrent «jeg savner»."],
+["voglia","lyst","Ho voglia di un caffè.","Avere voglia di betyr å ha lyst på eller til noe."],
+["vicino","nær","Il bar è vicino.","Kan brukes om både avstand og personer."],
+["lontano","langt borte","La stazione è lontana.","Motsatt av vicino."],
+["presto","tidlig / snart","A presto!","Kan bety både tidlig og snart."],
+["subito","med en gang","Arrivo subito.","Svært vanlig i dagligtale."],
+["davvero","virkelig","È davvero bello.","Brukes for å forsterke et utsagn."],
+["forse","kanskje","Forse domani.","Uttrykker usikkerhet."],
+["spesso","ofte","Vado spesso in Italia.","Et vanlig tidsadverb."],
+["quasi","nesten","Sono quasi arrivato.","Betyr at noe er nær ved å være fullført."],
+["insieme","sammen","Andiamo insieme.","Et nyttig hverdagsord."],
+["sembrare","å virke / se ut til","Sembra facile.","Brukes når noe virker å være på en bestemt måte."],
+["sapere","å vite / kunne","Non lo so.","Brukes om kunnskap og det å vite noe."],
+["conoscere","å kjenne","Conosco bene Roma.","Brukes om personer, steder og ting man kjenner."],
+["mettere","å legge / sette / ta på","Metto le chiavi sul tavolo.","Et svært vanlig verb med mange bruksområder."],
+["portare","å ta med / bære","Porto il vino.","Brukes når man tar eller bærer noe med seg."],
+["prendere","å ta","Prendo un caffè.","Brukes blant annet om mat, drikke og transport."],
+["lasciare","å forlate / la","Lascio la macchina qui.","Kan bety både å forlate og å la noe være."],
+["trovare","å finne","Non trovo le chiavi.","Et svært vanlig verb."],
+["pensare","å tenke / tro","Penso di sì.","Penso di sì betyr omtrent «jeg tror det»."],
+["credere","å tro","Credo di sì.","Brukes om hva man tror eller mener."],
+["capire","å forstå","Non capisco.","Et viktig verb når man lærer italiensk."],
+["dimenticare","å glemme","Ho dimenticato le chiavi.","Vanlig verb, særlig nyttig i fortid."],
+["ricordare","å huske","Ricordo quel giorno.","Kan også brukes refleksivt: ricordarsi."],
+["aspettare","å vente","Ti aspetto qui.","Ti aspetto betyr «jeg venter på deg»."],
+["chiedere","å spørre / be om","Posso chiedere una cosa?","Kan bety både spørre og be om."],
+["rispondere","å svare","Devo rispondere.","Brukes ofte med a: rispondere a qualcuno."],
+["succedere","å skje","Che cosa è successo?","Che cosa è successo? betyr «Hva skjedde?»."]
 ];
 
-const key=new Date().toISOString().slice(0,10);
-const idx=Math.floor(new Date(key).getTime()/86400000)%words.length;
-const x=words[(idx+words.length)%words.length];
-document.getElementById("date").textContent=new Date().toLocaleDateString("no-NO",{weekday:"long",day:"numeric",month:"long"});
-document.getElementById("word").textContent=x.w;
-document.getElementById("type").textContent=x.p;
-document.getElementById("translation").textContent=x.t;
-document.getElementById("explanation").textContent=x.e;
-document.getElementById("example").innerHTML="<em>"+x.ex+"</em><br><span class='nor'>"+x.no+"</span>";
+const facts=[
+"Roma har vært en viktig by i mer enn to tusen år og var sentrum i Romerriket.",
+"Vatikanstaten og San Marino er to selvstendige stater som ligger innenfor Italias geografiske område.",
+"Italia består av 20 regioner, med tydelige forskjeller i mat, kultur og dialekter.",
+"Napoli forbindes sterkt med opprinnelsen til den moderne pizzaen.",
+"Sicilia er den største øya i Middelhavet.",
+"Etna på Sicilia er en av Europas mest aktive vulkaner.",
+"Venezias historiske sentrum er bygget på øyer i en lagune.",
+"Bologna er kjent for Universitetet i Bologna, som regnes blant Europas eldste universiteter.",
+"Milano er et internasjonalt sentrum for mote og design.",
+"Italiensk utviklet seg fra latin og tilhører den romanske språkfamilien.",
+"Alpene danner en stor del av Italias nordlige grense.",
+"Roma er Italias hovedstad, mens Milano er landets nest største byområde og et viktig økonomisk sentrum."
+];
 
-function speak(){if("speechSynthesis" in window){let u=new SpeechSynthesisUtterance(x.w);u.lang="it-IT";u.rate=.82;speechSynthesis.cancel();speechSynthesis.speak(u)}}
-function saveWord(){let a=JSON.parse(localStorage.getItem("italianSaved")||"[]");if(!a.includes(x.w)){a.push(x.w);localStorage.setItem("italianSaved",JSON.stringify(a));}document.getElementById("saved").textContent="⭐ Lagret. Du har lagret "+a.length+" ord."}
-function showQuiz(){
- document.getElementById("quiz").classList.add("show");
- let others=words.filter(y=>y.w!==x.w).sort(()=>Math.random()-.5).slice(0,3);
- let opts=[x,...others].sort(()=>Math.random()-.5);
- document.getElementById("answers").innerHTML=opts.map(y=>`<button class="answer" onclick="answer(this,'${y.w}')">${y.t}</button>`).join("");
- document.getElementById("quizResult").textContent="";
+let index=0;
+let clicks=0;
+let saved=JSON.parse(localStorage.getItem("savedItalianWords")||"[]");
+
+function displayWord(){
+ document.getElementById("factCard").style.display="none";
+ document.getElementById("wordCard").style.display="block";
+ const w=words[index];
+ document.getElementById("word").textContent=w[0];
+ document.getElementById("translation").textContent=w[1];
+ document.getElementById("info").innerHTML="<b>Forklaring:</b> "+w[3]+"<br><br><b>Eksempel:</b> <i>"+w[2]+"</i>";
+ document.getElementById("counter").textContent=(index+1)+" / "+words.length+" ord";
+ updateSave();
 }
-function answer(el,w){let ok=w===x.w;document.querySelectorAll(".answer").forEach(b=>b.disabled=true);el.classList.add(ok?"correct":"wrong");document.getElementById("quizResult").textContent=ok?"Riktig! 🎉":"Ikke helt. Riktig svar er «"+x.t+"»."}
+
+function next(){
+ clicks++;
+ if(clicks%10===0){
+   document.getElementById("wordCard").style.display="none";
+   document.getElementById("factCard").style.display="block";
+   document.getElementById("fact").textContent=facts[(clicks/10-1)%facts.length];
+ }else{
+   index=(index+1)%words.length;
+   displayWord();
+ }
+}
+
+function saveWord(){
+ const w=words[index];
+ const pos=saved.findIndex(x=>x[0]===w[0]);
+ if(pos===-1) saved.push(w); else saved.splice(pos,1);
+ localStorage.setItem("savedItalianWords",JSON.stringify(saved));
+ updateSave();
+ renderSaved();
+}
+
+function updateSave(){
+ const yes=saved.some(x=>x[0]===words[index][0]);
+ const b=document.getElementById("saveBtn");
+ b.textContent=yes?"★ Lagret":"☆ Lagre ord";
+ b.className=yes?"save savedButton":"save";
+}
+
+function showSaved(){
+ const el=document.getElementById("savedList");
+ el.style.display=el.style.display==="block"?"none":"block";
+ renderSaved();
+}
+
+function renderSaved(){
+ const el=document.getElementById("savedWords");
+ if(!saved.length){el.innerHTML="<p>Ingen lagrede ord ennå.</p>";return;}
+ el.innerHTML=saved.map((w,i)=>"<div class='item'><b>"+w[0]+"</b> – "+w[1]+"<br><button class='remove' onclick='removeWord("+i+")'>Fjern</button></div>").join("");
+}
+
+function removeWord(i){
+ saved.splice(i,1);
+ localStorage.setItem("savedItalianWords",JSON.stringify(saved));
+ renderSaved();
+ updateSave();
+}
+
+displayWord();
+renderSaved();
 </script>
 </body>
 </html>
