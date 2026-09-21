@@ -23,11 +23,24 @@ button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:13px;font-
 .remove{width:auto;padding:7px 10px;font-size:14px}
 .fact{font-size:19px;line-height:1.5}
 .counter{text-align:center;color:#777;margin-top:12px;font-size:14px}
+.settings{background:white;padding:18px;border-radius:16px;margin:15px 0}
+.settings label{display:block;font-weight:600;margin-bottom:8px}
+.settings select{width:100%;padding:12px;border-radius:10px;border:1px solid #ccc;font-size:17px;background:white}
 </style>
 </head>
 <body>
 <div class="app">
 <h1>Italiensk hver dag 🇮🇹</h1>
+
+<div class="settings">
+<label for="wordType">Hvilke ord vil du øve på?</label>
+<select id="wordType" onchange="changeType()">
+<option value="all">Alle typer ord</option>
+<option value="verb">Verb</option>
+<option value="noun">Substantiv</option>
+<option value="adjective">Adjektiv</option>
+</select>
+</div>
 
 <div id="wordCard" class="card">
 <div id="word" class="word"></div>
@@ -54,10 +67,10 @@ button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:13px;font-
 
 <script>
 const words=[
-["affidarsi","å stole på / overlate seg til","Mi affido a te.","Et refleksivt verb som brukes når man stoler på eller overlater seg til noen."],
-["riuscire","å klare / lykkes med","Non riesco a dormire.","Brukes ofte som riuscire a + infinitiv."],
-["scegliere","å velge","Devo scegliere un ristorante.","Et svært vanlig verb."],
-["accorgersi","å legge merke til / oppdage","Mi sono accorto dell'errore.","Refleksivt verb, ofte brukt når man plutselig oppdager noe."],
+["affidarsi","å stole på / overlate seg til","Mi affido a te.","Et refleksivt verb som brukes når man stoler på eller overlater seg til noen.","verb"],
+["riuscire","å klare / lykkes med","Non riesco a dormire.","Brukes ofte som riuscire a + infinitiv.","verb"],
+["scegliere","å velge","Devo scegliere un ristorante.","Et svært vanlig verb.","verb"],
+["accorgersi","å legge merke til / oppdage","Mi sono accorto dell'errore.","Refleksivt verb, ofte brukt når man plutselig oppdager noe.","verb"],
 ["invece","i stedet / derimot","Io invece preferisco il caffè.","Brukes for å sette to ting opp mot hverandre."],
 ["ancora","fortsatt / ennå / igjen","Abito ancora qui.","Betydningen varierer med sammenhengen."],
 ["appena","nettopp / så snart","Sono appena arrivato.","Et vanlig adverb med flere betydninger."],
@@ -66,8 +79,8 @@ const words=[
 ["allora","da / altså / i så fall","Allora, che facciamo?","Et av de vanligste italienske småordene."],
 ["soprattutto","særlig / framfor alt","Mi piace soprattutto la montagna.","Brukes for å fremheve noe."],
 ["abbastanza","ganske / tilstrekkelig","È abbastanza facile.","Kan bety både ganske og nok."],
-["diventare","å bli","Vuole diventare medico.","Brukes om overgang fra én tilstand til en annen."],
-["mancare","å mangle / savne","Mi manca l'Italia.","Mi manca betyr omtrent «jeg savner»."],
+["diventare","å bli","Vuole diventare medico.","Brukes om overgang fra én tilstand til en annen.","verb"],
+["mancare","å mangle / savne","Mi manca l'Italia.","Mi manca betyr omtrent «jeg savner».","verb"],
 ["voglia","lyst","Ho voglia di un caffè.","Avere voglia di betyr å ha lyst på eller til noe."],
 ["vicino","nær","Il bar è vicino.","Kan brukes om både avstand og personer."],
 ["lontano","langt borte","La stazione è lontana.","Motsatt av vicino."],
@@ -78,24 +91,48 @@ const words=[
 ["spesso","ofte","Vado spesso in Italia.","Et vanlig tidsadverb."],
 ["quasi","nesten","Sono quasi arrivato.","Betyr at noe er nær ved å være fullført."],
 ["insieme","sammen","Andiamo insieme.","Et nyttig hverdagsord."],
-["sembrare","å virke / se ut til","Sembra facile.","Brukes når noe virker å være på en bestemt måte."],
-["sapere","å vite / kunne","Non lo so.","Brukes om kunnskap og det å vite noe."],
-["conoscere","å kjenne","Conosco bene Roma.","Brukes om personer, steder og ting man kjenner."],
-["mettere","å legge / sette / ta på","Metto le chiavi sul tavolo.","Et svært vanlig verb med mange bruksområder."],
-["portare","å ta med / bære","Porto il vino.","Brukes når man tar eller bærer noe med seg."],
-["prendere","å ta","Prendo un caffè.","Brukes blant annet om mat, drikke og transport."],
-["lasciare","å forlate / la","Lascio la macchina qui.","Kan bety både å forlate og å la noe være."],
-["trovare","å finne","Non trovo le chiavi.","Et svært vanlig verb."],
-["pensare","å tenke / tro","Penso di sì.","Penso di sì betyr omtrent «jeg tror det»."],
-["credere","å tro","Credo di sì.","Brukes om hva man tror eller mener."],
-["capire","å forstå","Non capisco.","Et viktig verb når man lærer italiensk."],
-["dimenticare","å glemme","Ho dimenticato le chiavi.","Vanlig verb, særlig nyttig i fortid."],
-["ricordare","å huske","Ricordo quel giorno.","Kan også brukes refleksivt: ricordarsi."],
-["aspettare","å vente","Ti aspetto qui.","Ti aspetto betyr «jeg venter på deg»."],
-["chiedere","å spørre / be om","Posso chiedere una cosa?","Kan bety både spørre og be om."],
-["rispondere","å svare","Devo rispondere.","Brukes ofte med a: rispondere a qualcuno."],
-["succedere","å skje","Che cosa è successo?","Che cosa è successo? betyr «Hva skjedde?»."]
+["sembrare","å virke / se ut til","Sembra facile.","Brukes når noe virker å være på en bestemt måte.","verb"],
+["sapere","å vite / kunne","Non lo so.","Brukes om kunnskap og det å vite noe.","verb"],
+["conoscere","å kjenne","Conosco bene Roma.","Brukes om personer, steder og ting man kjenner.","verb"],
+["mettere","å legge / sette / ta på","Metto le chiavi sul tavolo.","Et svært vanlig verb med mange bruksområder.","verb"],
+["portare","å ta med / bære","Porto il vino.","Brukes når man tar eller bærer noe med seg.","verb"],
+["prendere","å ta","Prendo un caffè.","Brukes blant annet om mat, drikke og transport.","verb"],
+["lasciare","å forlate / la","Lascio la macchina qui.","Kan bety både å forlate og å la noe være.","verb"],
+["trovare","å finne","Non trovo le chiavi.","Et svært vanlig verb.","verb"],
+["pensare","å tenke / tro","Penso di sì.","Penso di sì betyr omtrent «jeg tror det».","verb"],
+["credere","å tro","Credo di sì.","Brukes om hva man tror eller mener.","verb"],
+["capire","å forstå","Non capisco.","Et viktig verb når man lærer italiensk.","verb"],
+["dimenticare","å glemme","Ho dimenticato le chiavi.","Vanlig verb, særlig nyttig i fortid.","verb"],
+["ricordare","å huske","Ricordo quel giorno.","Kan også brukes refleksivt: ricordarsi.","verb"],
+["aspettare","å vente","Ti aspetto qui.","Ti aspetto betyr «jeg venter på deg».","verb"],
+["chiedere","å spørre / be om","Posso chiedere una cosa?","Kan bety både spørre og be om.","verb"],
+["rispondere","å svare","Devo rispondere.","Brukes ofte med a: rispondere a qualcuno.","verb"],
+["succedere","å skje","Che cosa è successo?","Che cosa è successo? betyr «Hva skjedde?».","verb"]
 ];
+
+// Ekstra substantiv og adjektiv
+words.push(
+["viaggio","reise","Il viaggio è stato bellissimo.","Et substantiv. Flertall: viaggi.","noun"],
+["spiaggia","strand","La spiaggia è bellissima.","Et hunkjønnssubstantiv: la spiaggia.","noun"],
+["montagna","fjell","Amo la montagna.","Et hunkjønnssubstantiv: la montagna.","noun"],
+["strada","vei / gate","Questa strada è lunga.","Et hunkjønnssubstantiv: la strada.","noun"],
+["paese","land / landsby","È un paese bellissimo.","Et hankjønnssubstantiv: il paese.","noun"],
+["città","by","Roma è una città grande.","Substantivet har samme form i entall og flertall.","noun"],
+["tempo","tid / vær","Non ho molto tempo.","Et vanlig hankjønnssubstantiv med flere betydninger.","noun"],
+["lavoro","arbeid / jobb","Ho molto lavoro oggi.","Et hankjønnssubstantiv: il lavoro.","noun"],
+["cibo","mat","Il cibo italiano è famoso.","Et hankjønnssubstantiv: il cibo.","noun"],
+["amico","venn","Marco è un mio amico.","Hankjønn: amico. Hunkjønn: amica.","noun"],
+["felice","glad / lykkelig","Sono molto felice.","Adjektiv som har samme entallsform for hankjønn og hunkjønn.","adjective"],
+["stanco","sliten","Sono stanco oggi.","Adjektivet bøyes: stanco, stanca, stanchi, stanche.","adjective"],
+["veloce","rask","La macchina è veloce.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["lento","langsom","Il treno è lento.","Bøyes etter kjønn og tall.","adjective"],
+["facile","lett / enkel","L'italiano non è sempre facile.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["difficile","vanskelig","Questo esercizio è difficile.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["bello","vakker / fin","È un posto bellissimo.","Et svært vanlig adjektiv med flere bøyningsformer.","adjective"],
+["grande","stor","Roma è una grande città.","Samme entallsform for hankjønn og hunkjønn.","adjective"],
+["piccolo","liten","È un piccolo paese.","Bøyes etter kjønn og tall.","adjective"],
+["interessante","interessant","Il libro è interessante.","Samme entallsform for hankjønn og hunkjønn.","adjective"]
+);
 
 const facts=[
 "Roma har vært en viktig by i mer enn to tusen år og var sentrum i Romerriket.",
@@ -114,16 +151,29 @@ const facts=[
 
 let index=0;
 let clicks=0;
+let selectedType=localStorage.getItem("italianWordType")||"all";
+
+function filteredWords(){
+ return selectedType==="all" ? words : words.filter(w=>w[4]===selectedType);
+}
+
+function changeType(){
+ selectedType=document.getElementById("wordType").value;
+ localStorage.setItem("italianWordType",selectedType);
+ index=0;
+ displayWord();
+}
 let saved=JSON.parse(localStorage.getItem("savedItalianWords")||"[]");
 
 function displayWord(){
  document.getElementById("factCard").style.display="none";
  document.getElementById("wordCard").style.display="block";
- const w=words[index];
+ const pool=filteredWords();
+ const w=pool[index];
  document.getElementById("word").textContent=w[0];
  document.getElementById("translation").textContent=w[1];
  document.getElementById("info").innerHTML="<b>Forklaring:</b> "+w[3]+"<br><br><b>Eksempel:</b> <i>"+w[2]+"</i>";
- document.getElementById("counter").textContent=(index+1)+" / "+words.length+" ord";
+ document.getElementById("counter").textContent=(index+1)+" / "+filteredWords().length+" ord";
  updateSave();
 }
 
@@ -134,13 +184,13 @@ function next(){
    document.getElementById("factCard").style.display="block";
    document.getElementById("fact").textContent=facts[(clicks/10-1)%facts.length];
  }else{
-   index=(index+1)%words.length;
+   index=(index+1)%filteredWords().length;
    displayWord();
  }
 }
 
 function saveWord(){
- const w=words[index];
+ const w=filteredWords()[index];
  const pos=saved.findIndex(x=>x[0]===w[0]);
  if(pos===-1) saved.push(w); else saved.splice(pos,1);
  localStorage.setItem("savedItalianWords",JSON.stringify(saved));
@@ -149,7 +199,9 @@ function saveWord(){
 }
 
 function updateSave(){
- const yes=saved.some(x=>x[0]===words[index][0]);
+ const pool=filteredWords();
+ const current=pool[index];
+ const yes=current && saved.some(x=>x[0]===current[0]);
  const b=document.getElementById("saveBtn");
  b.textContent=yes?"★ Lagret":"☆ Lagre ord";
  b.className=yes?"save savedButton":"save";
@@ -174,6 +226,7 @@ function removeWord(i){
  updateSave();
 }
 
+document.getElementById("wordType").value=selectedType;
 displayWord();
 renderSaved();
 </script>
