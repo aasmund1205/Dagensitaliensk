@@ -13,6 +13,7 @@ h1{text-align:center}
 .word{text-align:center;font-size:42px;font-weight:700;margin:10px}
 .translation{text-align:center;font-size:23px;margin:15px}
 .info{background:#f4f4f4;padding:15px;border-radius:12px;line-height:1.5}
+.activityGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.activityBox{background:#f4f4f4;padding:16px;border-radius:12px;text-align:center}.activityNumber{font-size:28px;font-weight:700}.activityLabel{font-size:13px;color:#777;margin-top:4px}
 button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:13px;font-size:18px;font-weight:600}
 .next{background:#222;color:white}
 .save{background:#e5e5ea}
@@ -34,7 +35,6 @@ button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:13px;font-
 
 <div class="settings">
 <label for="wordType">Hvilke ord vil du øve på?</label>
-<div id="vocabStats" style="font-size:14px;color:#777;margin-bottom:10px"></div>
 <select id="wordType" onchange="changeType()">
 <option value="all">Alle typer ord</option>
 <option value="verb">Verb</option>
@@ -59,6 +59,18 @@ button{width:100%;padding:15px;margin-top:12px;border:0;border-radius:13px;font-
 </div>
 
 <button class="listButton" onclick="showSaved()">📚 Lagrede ord</button>
+<button class="listButton" onclick="showActivity()">📊 Aktivitet</button>
+
+<div id="activityPage" class="card savedList">
+<h2>Aktivitet</h2>
+<p>Her ser du hvor mange ganger du har trykket deg videre til et nytt ord.</p>
+<div class="activityGrid">
+<div class="activityBox"><div id="activityTotal" class="activityNumber">0</div><div class="activityLabel">Totalt</div></div>
+<div class="activityBox"><div id="activityToday" class="activityNumber">0</div><div class="activityLabel">I dag</div></div>
+<div class="activityBox"><div id="activitySession" class="activityNumber">0</div><div class="activityLabel">Denne økten</div></div>
+<div class="activityBox"><div id="activityDays" class="activityNumber">0</div><div class="activityLabel">Aktive dager</div></div>
+</div>
+</div>
 
 <div id="savedList" class="card savedList">
 <h2>Lagrede ord</h2>
@@ -993,6 +1005,22 @@ words.push(
   words.push(...uniqueWords);
 }
 
+// Kvalitetssikring av ordlisten: fjern dubletter og blokker ugyldige oversettelser.
+// Dette gjør også at gamle placeholder-verdier ikke kan vises dersom en eldre versjon
+// av appen ligger lagret i nettleseren.
+const INVALID_TRANSLATIONS = /^(se\s+forklaring|forklaring|se\s+mer|ukjent|undefined|null|-)$/i;
+const seenWords = new Set();
+for (let i = words.length - 1; i >= 0; i--) {
+  const w = words[i];
+  const key = String(w[0] || "").trim().toLocaleLowerCase("it");
+  const translation = String(w[1] || "").trim();
+  if (!key || !translation || INVALID_TRANSLATIONS.test(translation) || seenWords.has(key)) {
+    words.splice(i, 1);
+  } else {
+    seenWords.add(key);
+  }
+}
+
 const facts=[
  "Den 24. august år 79 e.Kr. fikk Vesuv et katastrofalt utbrudd som begravde Pompeii og Herculaneum ved Napolibukta. Byene ble bevart under vulkansk materiale og gir i dag et uvanlig detaljert bilde av romersk hverdagsliv.",
  "Universitetet i Bologna forbindes tradisjonelt med året 1088. Bologna i Emilia-Romagna omtales derfor ofte som hjemsted for det eldste universitetet i den vestlige verden.",
@@ -1018,6 +1046,10 @@ const facts=[
 
 let index=0;
 let clicks=0;
+let sessionWordClicks=0;
+let activity=JSON.parse(localStorage.getItem("italianActivity")||'{"total":0,"days":{}}');
+if(!activity.days) activity.days={};
+if(!activity.total) activity.total=0;
 let queue=[];
 let queuePos=0;
 let selectedType=localStorage.getItem("italianWordType")||"all";
@@ -1033,14 +1065,6 @@ function shuffle(arr){
   [a[i],a[j]]=[a[j],a[i]];
  }
  return a;
-}
-
-function updateStats(){
- const all=words.length;
- const v=words.filter(w=>w[4]==="verb").length;
- const n=words.filter(w=>w[4]==="noun").length;
- const a=words.filter(w=>w[4]==="adjective").length;
- document.getElementById("vocabStats").textContent=all+" ord totalt • "+v+" verb • "+n+" substantiv • "+a+" adjektiv";
 }
 
 function resetQueue(){
@@ -1061,6 +1085,60 @@ function changeType(){
  displayWord();
 }
 let saved=JSON.parse(localStorage.getItem("savedItalianWords")||"[]");
+// Oppgrader lagrede ord fra eldre versjoner til den kvalitetssikrede ordlisten.
+// Dermed forsvinner gamle «Se forklaring»-oversettelser fra localStorage.
+const canonicalByWord = new Map(words.map(w=>[String(w[0]).toLocaleLowerCase("it"), w]));
+saved = saved
+  .map(w=>canonicalByWord.get(String((w&&w[0])||"").toLocaleLowerCase("it")))
+  .filter(Boolean);
+saved = [...new Map(saved.map(w=>[String(w[0]).toLocaleLowerCase("it"),w])).values()];
+localStorage.setItem("savedItalianWords",JSON.stringify(saved));
+
+function cleanNorwegianMeaning(text){
+ return String(text||"").replace(/^å\s+/,"").split(" / ")[0];
+}
+
+function exampleFor(w){
+ // Eksempeltypen følger plasseringen i den blandede køen: c’è → ci sono → è.
+ const mode=queuePos%3;
+ const word=w[0];
+ const meaning=cleanNorwegianMeaning(w[1]);
+ if(mode===0){
+   return {it:"C’è una parola italiana che sto imparando: «"+word+"».", no:"Det er et italiensk ord jeg holder på å lære: «"+meaning+"»."};
+ }
+ if(mode===1){
+   return {it:"Ci sono molte parole utili in italiano, tra cui «"+word+"».", no:"Det finnes mange nyttige ord på italiensk, blant annet «"+meaning+"»."};
+ }
+ return {it:"«"+word+"» è una parola italiana che significa «"+w[1]+"».", no:"«"+word+"» er et italiensk ord som betyr «"+w[1]+"»."};
+}
+
+function todayKey(){
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function recordWordClick(){
+ sessionWordClicks++;
+ activity.total++;
+ const day=todayKey();
+ activity.days[day]=(activity.days[day]||0)+1;
+ localStorage.setItem("italianActivity",JSON.stringify(activity));
+ renderActivity();
+}
+
+function renderActivity(){
+ const day=todayKey();
+ document.getElementById("activityTotal").textContent=activity.total||0;
+ document.getElementById("activityToday").textContent=activity.days[day]||0;
+ document.getElementById("activitySession").textContent=sessionWordClicks;
+ document.getElementById("activityDays").textContent=Object.keys(activity.days).filter(k=>activity.days[k]>0).length;
+}
+
+function showActivity(){
+ const el=document.getElementById("activityPage");
+ el.style.display=el.style.display==="block"?"none":"block";
+ renderActivity();
+}
 
 function displayWord(){
  document.getElementById("factCard").style.display="none";
@@ -1068,13 +1146,15 @@ function displayWord(){
  const w=currentWord();
  document.getElementById("word").textContent=w[0];
  document.getElementById("translation").textContent=w[1];
- document.getElementById("info").innerHTML="<b>Oversettelse:</b> "+w[1]+"<br><br><b>Eksempel:</b> <i>"+w[2]+"</i><br><br><b>Merknad:</b> "+w[3];
+ const ex=exampleFor(w);
+ document.getElementById("info").innerHTML="<b>Eksempel:</b> <i>"+ex.it+"</i><br><br><b>Norsk:</b> "+ex.no;
  document.getElementById("counter").textContent=(queuePos+1)+" / "+filteredWords().length+" før listen blandes på nytt";
  updateSave();
 }
 
 function next(){
  clicks++;
+ recordWordClick();
  if(clicks%10===0){
    document.getElementById("wordCard").style.display="none";
    document.getElementById("factCard").style.display="block";
@@ -1123,10 +1203,10 @@ function removeWord(i){
 }
 
 document.getElementById("wordType").value=selectedType;
-updateStats();
 resetQueue();
 displayWord();
 renderSaved();
+renderActivity();
 </script>
 </body>
 </html>
