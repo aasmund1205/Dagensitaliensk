@@ -1060,113 +1060,7 @@ function cleanNorwegianMeaning(text){
 }
 
 function exampleFor(w){
- // Eksempeltypen følger køen: c’è → ci sono → è. Innen hver type varierer setningen mye.
- const mode=queuePos%3;
- const word=w[0];
- const meaning=cleanNorwegianMeaning(w[1]);
- const seed=[...word].reduce((a,c)=>a+c.codePointAt(0),0)+queuePos;
- const variants={
-  0:[
-   ["C’è una parola che sento spesso in Italia: «{w}».","Det er et ord jeg ofte hører i Italia: «{m}»."],
-   ["C’è un termine utile da ricordare oggi: «{w}».","Det er et nyttig ord å huske i dag: «{m}»."],
-   ["C’è una parola che vorrei usare più spesso: «{w}».","Det er et ord jeg gjerne vil bruke oftere: «{m}»."],
-   ["C’è un’espressione che vale la pena imparare: «{w}».","Det er et uttrykk som er verdt å lære: «{m}»."],
-   ["C’è una parola nuova sul mio elenco: «{w}».","Det er et nytt ord på listen min: «{m}»."],
-   ["C’è una parola che può essere utile in viaggio: «{w}».","Det er et ord som kan være nyttig på reise: «{m}»."],
-   ["C’è un vocabolo che oggi voglio memorizzare: «{w}».","Det er et ord jeg vil lære meg i dag: «{m}»."],
-   ["C’è una parola interessante nella lezione di oggi: «{w}».","Det er et interessant ord i dagens leksjon: «{m}»."],
-   ["C’è una parola che mi ricorda una conversazione in italiano: «{w}».","Det er et ord som minner meg om en samtale på italiensk: «{m}»."],
-   ["C’è un termine che posso provare a usare domani: «{w}».","Det er et ord jeg kan prøve å bruke i morgen: «{m}»."],
-   ["C’è una parola che non voglio dimenticare: «{w}».","Det er et ord jeg ikke vil glemme: «{m}»."],
-   ["C’è un vocabolo italiano che merita attenzione: «{w}».","Det er et italiensk ord som fortjener oppmerksomhet: «{m}»."],
-   ["C’è una parola che potrei incontrare in un libro: «{w}».","Det er et ord jeg kan støte på i en bok: «{m}»."],
-   ["C’è un termine che può comparire in una conversazione: «{w}».","Det er et ord som kan dukke opp i en samtale: «{m}»."],
-   ["C’è una parola da aggiungere al mio vocabolario: «{w}».","Det er et ord jeg bør legge til i ordforrådet mitt: «{m}»."],
-   ["C’è una parola che oggi mi sembra più facile: «{w}».","Det er et ord som virker lettere for meg i dag: «{m}»."],
-   ["C’è un vocabolo che voglio riconoscere subito: «{w}».","Det er et ord jeg vil kjenne igjen med én gang: «{m}»."],
-   ["C’è una parola italiana da portare con me oggi: «{w}».","Det er et italiensk ord jeg tar med meg i dag: «{m}»."],
-   ["C’è un termine che potrebbe servirmi al ristorante o per strada: «{w}».","Det er et ord som kan komme til nytte på restaurant eller ute på gata: «{m}»."],
-   ["C’è una parola che voglio saper usare senza pensarci: «{w}».","Det er et ord jeg vil kunne bruke uten å tenke meg om: «{m}»."],
-   ["C’è un nuovo vocabolo nella mia giornata: «{w}».","Det er et nytt ord i dagen min: «{m}»."],
-   ["C’è una parola che posso ripetere ad alta voce: «{w}».","Det er et ord jeg kan gjenta høyt: «{m}»."],
-   ["C’è un termine che voglio capire quando lo sento: «{w}».","Det er et ord jeg vil forstå når jeg hører det: «{m}»."],
-   ["C’è una parola che oggi entra nel mio italiano: «{w}».","Det er et ord som blir en del av italiensken min i dag: «{m}»."],
-   ["C’è un vocabolo da tenere a mente: «{w}».","Det er et ord å ha i bakhodet: «{m}»."],
-   ["C’è una parola che potrebbe tornarmi utile a Roma: «{w}».","Det er et ord som kan komme til nytte i Roma: «{m}»."],
-   ["C’è un termine che voglio riconoscere nei film italiani: «{w}».","Det er et ord jeg vil kjenne igjen i italienske filmer: «{m}»."],
-   ["C’è una parola che posso cercare di usare questa settimana: «{w}».","Det er et ord jeg kan prøve å bruke denne uken: «{m}»."],
-   ["C’è un vocabolo che rende il mio italiano un po’ più ricco: «{w}».","Det er et ord som gjør italiensken min litt rikere: «{m}»."],
-   ["C’è una parola che oggi vale la pena ripassare: «{w}».","Det er et ord det er verdt å repetere i dag: «{m}»." ]
-  ],
-  1:[
-   ["Ci sono molte parole utili, e oggi scelgo «{w}».","Det finnes mange nyttige ord, og i dag velger jeg «{m}»."],
-   ["Ci sono parole che si ricordano subito; una è «{w}».","Det finnes ord man husker med én gang; ett av dem er «{m}»."],
-   ["Ci sono tanti vocaboli da imparare, tra cui «{w}».","Det finnes mange ord å lære, blant annet «{m}»."],
-   ["Ci sono parole che incontro spesso quando studio, come «{w}».","Det finnes ord jeg ofte møter når jeg studerer, som «{m}»."],
-   ["Ci sono nuovi termini nella mia lista; oggi tocca a «{w}».","Det er flere nye ord på listen min; i dag er det «{m}» sin tur."],
-   ["Ci sono parole che possono aiutarmi in Italia, per esempio «{w}».","Det finnes ord som kan hjelpe meg i Italia, for eksempel «{m}»."],
-   ["Ci sono vocaboli facili da riconoscere ma difficili da usare; provo con «{w}».","Det finnes ord som er lette å kjenne igjen, men vanskeligere å bruke; jeg prøver med «{m}»."],
-   ["Ci sono parole che voglio capire al volo, come «{w}».","Det finnes ord jeg vil forstå med én gang, som «{m}»."],
-   ["Ci sono tanti modi per ampliare il vocabolario; oggi parto da «{w}».","Det finnes mange måter å utvide ordforrådet på; i dag starter jeg med «{m}»."],
-   ["Ci sono parole che vale la pena ripetere più volte, tra cui «{w}».","Det finnes ord det er verdt å gjenta flere ganger, blant annet «{m}»."],
-   ["Ci sono termini che posso incontrare ogni giorno; «{w}» è uno di questi.","Det finnes ord jeg kan møte hver dag; «{m}» er ett av dem."],
-   ["Ci sono parole che mi aiutano a parlare con più sicurezza, come «{w}».","Det finnes ord som hjelper meg å snakke sikrere, som «{m}»."],
-   ["Ci sono vocaboli che vorrei usare nella prossima conversazione, incluso «{w}».","Det finnes ord jeg gjerne vil bruke i neste samtale, blant annet «{m}»."],
-   ["Ci sono parole italiane che suonano bene; oggi noto «{w}».","Det finnes italienske ord som klinger fint; i dag legger jeg merke til «{m}»."],
-   ["Ci sono termini che diventano facili con la pratica, come «{w}».","Det finnes ord som blir lette med øvelse, som «{m}»."],
-   ["Ci sono parole che posso associare a un’immagine; oggi provo con «{w}».","Det finnes ord jeg kan knytte til et bilde; i dag prøver jeg med «{m}»."],
-   ["Ci sono vocaboli che voglio ricordare prima del prossimo viaggio, come «{w}».","Det finnes ord jeg vil huske før neste reise, som «{m}»."],
-   ["Ci sono parole che sento nei podcast italiani; «{w}» può essere una di queste.","Det finnes ord jeg hører i italienske podkaster; «{m}» kan være ett av dem."],
-   ["Ci sono termini che posso annotare sul telefono, tra cui «{w}».","Det finnes ord jeg kan notere på telefonen, blant annet «{m}»."],
-   ["Ci sono parole che diventano più naturali ogni volta che le uso; oggi provo «{w}».","Det finnes ord som blir mer naturlige hver gang jeg bruker dem; i dag prøver jeg «{m}»."],
-   ["Ci sono vocaboli che posso imparare durante una pausa, come «{w}».","Det finnes ord jeg kan lære i en pause, som «{m}»."],
-   ["Ci sono parole che mi fanno capire meglio una frase; oggi studio «{w}».","Det finnes ord som gjør at jeg forstår en setning bedre; i dag studerer jeg «{m}»."],
-   ["Ci sono termini che vorrei riconoscere al bar, in stazione o al mercato; uno è «{w}».","Det finnes ord jeg vil kjenne igjen på kafé, på stasjonen eller på markedet; ett er «{m}»."],
-   ["Ci sono parole che posso usare per rendere una frase più precisa, come «{w}».","Det finnes ord jeg kan bruke for å gjøre en setning mer presis, som «{m}»."],
-   ["Ci sono vocaboli che restano in mente grazie a un buon esempio; oggi provo con «{w}».","Det finnes ord som fester seg takket være et godt eksempel; i dag prøver jeg med «{m}»."],
-   ["Ci sono parole che vorrei sapere prima di arrivare in Italia; «{w}» è sulla lista.","Det finnes ord jeg gjerne vil kunne før jeg kommer til Italia; «{m}» står på listen."],
-   ["Ci sono termini che posso incontrare leggendo un giornale, come «{w}».","Det finnes ord jeg kan møte når jeg leser en avis, som «{m}»."],
-   ["Ci sono parole che imparerei volentieri in una conversazione vera; una è «{w}».","Det finnes ord jeg gjerne ville lært i en ekte samtale; ett er «{m}»."],
-   ["Ci sono vocaboli che mi avvicinano un po’ di più all’italiano naturale, come «{w}».","Det finnes ord som bringer meg litt nærmere naturlig italiensk, som «{m}»."],
-   ["Ci sono parole da scoprire ogni giorno; oggi è il turno di «{w}».","Det finnes ord å oppdage hver dag; i dag er det «{m}» sin tur."]
-  ],
-  2:[
-   ["«{w}» è una parola che oggi voglio ricordare.","«{m}» er et ord jeg vil huske i dag."],
-   ["«{w}» è il vocabolo che scelgo per questo momento.","«{m}» er ordet jeg velger akkurat nå."],
-   ["«{w}» è una parola utile da avere nel proprio vocabolario.","«{m}» er et nyttig ord å ha i ordforrådet."],
-   ["«{w}» è il termine che provo a memorizzare adesso.","«{m}» er ordet jeg prøver å lære meg nå."],
-   ["«{w}» è una parola che potrei sentire durante un viaggio.","«{m}» er et ord jeg kan høre på en reise."],
-   ["«{w}» è il vocabolo italiano su cui mi concentro oggi.","«{m}» er det italienske ordet jeg fokuserer på i dag."],
-   ["«{w}» è una parola che voglio riconoscere senza tradurre mentalmente.","«{m}» er et ord jeg vil kjenne igjen uten å oversette i hodet."],
-   ["«{w}» è il termine che aggiungo oggi alla mia memoria.","«{m}» er ordet jeg legger til i hukommelsen i dag."],
-   ["«{w}» è una parola che può rendere il mio italiano più naturale.","«{m}» er et ord som kan gjøre italiensken min mer naturlig."],
-   ["«{w}» è il vocabolo che proverò a usare in una frase.","«{m}» er ordet jeg skal prøve å bruke i en setning."],
-   ["«{w}» è una parola da riconoscere quando qualcuno parla velocemente.","«{m}» er et ord å kjenne igjen når noen snakker fort."],
-   ["«{w}» è il termine che oggi porto con me.","«{m}» er ordet jeg tar med meg i dag."],
-   ["«{w}» è una parola che posso incontrare al cinema o in televisione.","«{m}» er et ord jeg kan møte på kino eller TV."],
-   ["«{w}» è il vocabolo che voglio rendere familiare.","«{m}» er ordet jeg vil gjøre kjent for meg."],
-   ["«{w}» è una parola che può comparire in una conversazione quotidiana.","«{m}» er et ord som kan dukke opp i en hverdagssamtale."],
-   ["«{w}» è il termine che ripasso prima di passare al prossimo.","«{m}» er ordet jeg repeterer før jeg går videre til det neste."],
-   ["«{w}» è una parola che vorrei usare con sicurezza.","«{m}» er et ord jeg gjerne vil bruke med sikkerhet."],
-   ["«{w}» è il vocabolo di oggi: domani ne arriverà un altro.","«{m}» er dagens ord; i morgen kommer et nytt."],
-   ["«{w}» è una parola che posso collegare a una situazione reale.","«{m}» er et ord jeg kan knytte til en virkelig situasjon."],
-   ["«{w}» è il termine che scelgo di non dimenticare.","«{m}» er ordet jeg velger å ikke glemme."],
-   ["«{w}» è una parola che potrebbe essermi utile a Napoli, Milano o Firenze.","«{m}» er et ord som kan være nyttig i Napoli, Milano eller Firenze."],
-   ["«{w}» è il vocabolo che provo a riconoscere a orecchio.","«{m}» er ordet jeg prøver å kjenne igjen på lyden."],
-   ["«{w}» è una parola che voglio capire senza fermare la conversazione.","«{m}» er et ord jeg vil forstå uten å stoppe samtalen."],
-   ["«{w}» è il termine che oggi entra nella mia lista personale.","«{m}» er ordet som kommer inn på min personlige liste i dag."],
-   ["«{w}» è una parola che posso esercitarmi a pronunciare ad alta voce.","«{m}» er et ord jeg kan øve på å uttale høyt."],
-   ["«{w}» è il vocabolo che vorrei riconoscere leggendo un menu o un cartello.","«{m}» er ordet jeg gjerne vil kjenne igjen når jeg leser en meny eller et skilt."],
-   ["«{w}» è una parola che oggi provo a fare mia.","«{m}» er et ord jeg prøver å gjøre til mitt i dag."],
-   ["«{w}» è il termine che scelgo per allenare il mio italiano.","«{m}» er ordet jeg velger for å trene italiensken min."],
-   ["«{w}» è una parola che voglio capire anche fuori dal libro di testo.","«{m}» er et ord jeg vil forstå også utenfor læreboka."],
-   ["«{w}» è il vocabolo che chiude questa piccola tappa di studio.","«{m}» er ordet som avslutter denne lille studieøkten."]
-  ]
- };
- const pool=variants[mode];
- const pair=pool[seed%pool.length];
- const fill=t=>t.replaceAll("{w}",word).replaceAll("{m}",meaning);
- return {it:fill(pair[0]), no:fill(pair[1])};
+  return {it: w[2], no: ""};
 }
 
 function todayKey(){
@@ -1198,7 +1092,7 @@ function displayWord(){
  document.getElementById("word").textContent=w[0];
  document.getElementById("translation").textContent=w[1];
  const ex=exampleFor(w);
- document.getElementById("info").innerHTML="<b>Eksempel:</b> <i>"+ex.it+"</i><br><br><b>Norsk:</b> "+ex.no;
+ document.getElementById("info").innerHTML="<b>Eksempel:</b> <i>"+ex.it+"</i>"+(ex.no ? "<br><br><b>Norsk:</b> "+ex.no : "");
  document.getElementById("counter").textContent=(queuePos+1)+" / "+filteredWords().length+" før listen blandes på nytt";
  updateSave();
 }
